@@ -38,7 +38,7 @@ class OIDC_Logout {
             $params['id_token_hint'] = $id_token;
         }
 
-        wp_redirect( $end_session_ep . '?' . http_build_query( $params ) );
+        wp_safe_redirect( $end_session_ep . '?' . http_build_query( $params ) );
         exit;
     }
 
@@ -83,8 +83,8 @@ class OIDC_Logout {
 
         if ( ! empty( $sub ) ) {
             $users = get_users( array(
-                'meta_key'   => '_oidc_subject',
-                'meta_value' => $sub,
+                'meta_key'   => '_oidc_subject', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                'meta_value' => $sub,            // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                 'number'     => 1,
             ) );
             if ( ! empty( $users ) ) {

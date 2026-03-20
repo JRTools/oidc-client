@@ -568,6 +568,7 @@ class OIDC_Admin {
         }
 
         global $wpdb;
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Transients direkt löschen ist bewusst; delete_transient() kennt keine Wildcard.
         $wpdb->query(
             "DELETE FROM {$wpdb->options}
              WHERE option_name LIKE '_transient_oidc_jwks_%'
@@ -903,6 +904,7 @@ class OIDC_Admin {
         $code = wp_remote_retrieve_response_code( $response );
         if ( 200 !== (int) $code ) {
             wp_send_json_error(
+                /* translators: %d: HTTP-Statuscode der Discovery-URL-Anfrage */
                 array( 'message' => sprintf( __( 'HTTP-Fehler %d', 'oidc-client' ), $code ) ),
                 500
             );

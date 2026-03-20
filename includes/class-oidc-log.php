@@ -46,7 +46,7 @@ class OIDC_Log {
     public static function write( $user_id, $success, $message ) {
         global $wpdb;
 
-        $wpdb->insert(
+        $wpdb->insert( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Log-Tabelle, bewusst kein Caching.
             $wpdb->prefix . 'oidc_login_log',
             array(
                 'user_id'   => (int) $user_id,
@@ -94,7 +94,7 @@ class OIDC_Log {
         $offset   = ( $page - 1 ) * $per_page;
         $table    = $wpdb->prefix . 'oidc_login_log';
 
-        // phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- $table ist ein intern generierter Tabellenname, kein User-Input.
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared, PluginCheck.Security.DirectDB.UnescapedDBParameter -- $table ist intern generiert, kein User-Input. Log-Daten werden bewusst nicht gecacht.
         $items = $wpdb->get_results( $wpdb->prepare(
             "SELECT l.*, u.user_login
              FROM {$table} l
@@ -106,7 +106,7 @@ class OIDC_Log {
         ) );
         // phpcs:enable
 
-        $total       = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        $total       = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, PluginCheck.Security.DirectDB.UnescapedDBParameter
         $total_pages = max( 1, (int) ceil( $total / $per_page ) );
 
         ?>
@@ -114,6 +114,7 @@ class OIDC_Log {
             <h1><?php esc_html_e( 'OIDC Login-Log', 'oidc-client' ); ?></h1>
             <p class="description">
                 <?php
+                /* translators: %d: Anzahl der Log-Einträge */
                 printf(
                     esc_html__( '%d Einträge gesamt', 'oidc-client' ),
                     (int) $total // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- int-cast, kein User-Input.
