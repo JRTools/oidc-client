@@ -3,6 +3,9 @@
 .gitignore
 .phpcs.xml
 .distignore
+.phpunit.result.cache
+.DS_Store
+.idea
 bin
 composer.json
 composer.lock
