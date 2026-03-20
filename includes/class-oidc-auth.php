@@ -269,8 +269,8 @@ class OIDC_Auth {
                     . ' | Sent: ' . wp_json_encode( $debug_sent )
                     . ' | Response: ' . $raw_body );
             }
-            /* translators: 1: Fehler-Code vom Token-Endpoint, 2: Fehlerbeschreibung oder leer */
             $msg = sprintf(
+                /* translators: 1: Fehler-Code vom Token-Endpoint, 2: Fehlerbeschreibung oder leer */
                 __( 'Fehler vom Provider (Token-Endpoint): %1$s%2$s', 'oidc-client' ),
                 $error_code,
                 $error_desc ? ' – ' . $error_desc : ''

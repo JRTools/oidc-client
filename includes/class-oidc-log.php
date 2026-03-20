@@ -114,8 +114,8 @@ class OIDC_Log {
             <h1><?php esc_html_e( 'OIDC Login-Log', 'oidc-client' ); ?></h1>
             <p class="description">
                 <?php
-                /* translators: %d: Anzahl der Log-Einträge */
                 printf(
+                    /* translators: %d: Anzahl der Log-Einträge */
                     esc_html__( '%d Einträge gesamt', 'oidc-client' ),
                     (int) $total // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- int-cast, kein User-Input.
                 );
