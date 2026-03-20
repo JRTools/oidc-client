@@ -28,7 +28,7 @@ jobs:
           coverage: none
 
       - name: Composer-Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist
+        run: composer update --no-interaction --prefer-dist
 
       - name: Code-Style prüfen (PHPCS)
         run: vendor/bin/phpcs
