@@ -103,7 +103,7 @@ class OIDC_Auth {
             $params['prompt'] = sanitize_text_field( $extra_params['prompt'] );
         }
 
-        wp_safe_redirect( $auth_ep . '?' . http_build_query( $params ) );
+        wp_redirect( $auth_ep . '?' . http_build_query( $params ) );
         exit;
     }
 
@@ -112,15 +112,15 @@ class OIDC_Auth {
     // -------------------------------------------------------------------------
 
     public function handle_callback() {
-        if ( ! isset( $_GET['oidc_callback'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth-Callback, Nonce-Prüfung erfolgt über State-Parameter (CSRF-Schutz).
+        if ( ! isset( $_GET['oidc_callback'] ) ) {
             return;
         }
 
         // Fehler vom Provider (Authorization-Endpoint hat den Callback mit ?error=... aufgerufen)
-        if ( isset( $_GET['error'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $error_code = sanitize_text_field( wp_unslash( $_GET['error'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-            $error_desc = isset( $_GET['error_description'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-                ? sanitize_text_field( wp_unslash( $_GET['error_description'] ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        if ( isset( $_GET['error'] ) ) {
+            $error_code = sanitize_text_field( wp_unslash( $_GET['error'] ) );
+            $error_desc = isset( $_GET['error_description'] )
+                ? sanitize_text_field( wp_unslash( $_GET['error_description'] ) )
                 : '';
             $msg = sprintf(
                 /* translators: 1: Fehler-Code, 2: Beschreibung oder leer */
@@ -132,8 +132,8 @@ class OIDC_Auth {
             return;
         }
 
-        $code  = isset( $_GET['code'] )  ? sanitize_text_field( wp_unslash( $_GET['code'] ) )  : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $code  = isset( $_GET['code'] )  ? sanitize_text_field( wp_unslash( $_GET['code'] ) )  : '';
+        $state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : '';
 
         if ( empty( $code ) || empty( $state ) ) {
             $this->login_error( __( 'Fehlende Parameter im Callback.', 'oidc-client' ) );
@@ -264,15 +264,12 @@ class OIDC_Auth {
             // Debug-Info loggen (sichtbar wenn WP_DEBUG_LOG aktiv)
             $debug_sent = $body;
             $debug_sent['client_secret'] = isset( $debug_sent['client_secret'] ) ? '***' : '(not in body)';
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( '[OIDC Client] Token-Endpoint error.' // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-                    . ' URL: ' . $token_ep
-                    . ' | Auth-Method: ' . $auth_method
-                    . ' | Sent: ' . wp_json_encode( $debug_sent )
-                    . ' | Response: ' . $raw_body );
-            }
+            error_log( '[OIDC Client] Token-Endpoint error.'
+                . ' URL: ' . $token_ep
+                . ' | Auth-Method: ' . $auth_method
+                . ' | Sent: ' . wp_json_encode( $debug_sent )
+                . ' | Response: ' . $raw_body );
 
-            /* translators: 1: Fehler-Code vom Token-Endpoint, 2: Fehlerbeschreibung oder leer */
             $msg = sprintf(
                 __( 'Fehler vom Provider (Token-Endpoint): %1$s%2$s', 'oidc-client' ),
                 $error_code,
@@ -290,12 +287,9 @@ class OIDC_Auth {
         }
 
         if ( 200 !== (int) $response_code || ! is_array( $body_data ) ) {
-            if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( '[OIDC Client] Token-Endpoint unexpected response. HTTP ' . $response_code . ' | Body: ' . $raw_body ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-            }
+            error_log( '[OIDC Client] Token-Endpoint unexpected response. HTTP ' . $response_code . ' | Body: ' . $raw_body );
             return new WP_Error(
                 'token_request_failed',
-                /* translators: %d: HTTP-Statuscode des Token-Endpoints */
                 sprintf( __( 'Token-Request fehlgeschlagen (HTTP %d).', 'oidc-client' ), $response_code )
             );
         }
@@ -426,8 +420,8 @@ class OIDC_Auth {
 
         if ( ! empty( $sub ) ) {
             $users = get_users( array(
-                'meta_key'   => '_oidc_subject', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- gezielte Suche nach OIDC-Subject, kein langsamer Scan.
-                'meta_value' => $sub,            // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                'meta_key'   => '_oidc_subject',
+                'meta_value' => $sub,
                 'number'     => 1,
             ) );
             if ( ! empty( $users ) ) {
@@ -518,12 +512,12 @@ class OIDC_Auth {
         $remember = get_option( 'oidc_remember_me', 'never' ) === 'always';
         wp_set_current_user( $user->ID );
         wp_set_auth_cookie( $user->ID, $remember );
-        do_action( 'wp_login', $user->user_login, $user ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core-Hook, kein eigener Hook.
+        do_action( 'wp_login', $user->user_login, $user );
 
         // F7: Erfolgreichen Login loggen
         OIDC_Log::write( $user->ID, true, __( 'OIDC Login erfolgreich.', 'oidc-client' ) );
 
-        $redirect_to = apply_filters( 'login_redirect', admin_url(), '', $user ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core-Filter.
+        $redirect_to = apply_filters( 'login_redirect', admin_url(), '', $user );
         wp_safe_redirect( $redirect_to );
         exit;
     }

@@ -1,6 +1,5 @@
 .git
 .github
-.gitignore
 .phpcs.xml
 .distignore
 bin
@@ -8,7 +7,6 @@ composer.json
 composer.lock
 Makefile
 phpunit.xml.dist
-README.md
 tests
 vendor
 wordpress

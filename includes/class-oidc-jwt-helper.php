@@ -81,7 +81,6 @@ class OIDC_JWT_Helper {
         if ( 200 !== (int) $code ) {
             return new WP_Error(
                 'jwks_fetch_failed',
-                /* translators: %d: HTTP-Statuscode beim JWKS-Abruf */
                 sprintf( __( 'JWKS-Abruf fehlgeschlagen (HTTP %d).', 'oidc-client' ), $code )
             );
         }
@@ -114,7 +113,6 @@ class OIDC_JWT_Helper {
         if ( 'RS256' !== $alg ) {
             return new WP_Error(
                 'unsupported_alg',
-                /* translators: %s: Name des nicht unterstützten JWT-Signaturalgorithmus */
                 sprintf( __( 'Nicht unterstützter Signaturalgorithmus: %s', 'oidc-client' ), sanitize_text_field( $alg ) )
             );
         }

@@ -41,6 +41,7 @@ require_once OIDC_CLIENT_DIR . 'includes/class-oidc-auth.php';
 require_once OIDC_CLIENT_DIR . 'includes/class-oidc-login.php';
 
 function oidc_client_init() {
+    load_plugin_textdomain( 'oidc-client', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
     new OIDC_Log();
     new OIDC_Logout();
     new OIDC_Profile();
