@@ -5,6 +5,7 @@
 bin
 composer.json
 composer.lock
+Makefile
 phpunit.xml.dist
 tests
 vendor
