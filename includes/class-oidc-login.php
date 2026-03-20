@@ -68,7 +68,7 @@ class OIDC_Login {
         if ( get_option( 'oidc_hide_wp_login', '' ) !== '1' ) {
             return;
         }
-        if ( isset( $_GET['showlogin'] ) ) {
+        if ( isset( $_GET['showlogin'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Einfacher Passthrough-Parameter ohne sicherheitsrelevante Funktion.
             return;
         }
         ?>
@@ -90,12 +90,12 @@ class OIDC_Login {
         // Ausnahmen: Passthrough-Parameter
         $skip_params = array( 'showlogin', 'loggedout', 'oidc_error', 'oidc_callback', 'oidc_link' );
         foreach ( $skip_params as $param ) {
-            if ( isset( $_GET[ $param ] ) ) {
+            if ( isset( $_GET[ $param ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Passthrough-Parameter für Auto-Login-Ausnahmen.
                 return;
             }
         }
 
-        $action = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : '';
+        $action = isset( $_GET['action'] ) ? sanitize_text_field( wp_unslash( $_GET['action'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
         $skip_actions = array( 'logout', 'lostpassword', 'rp', 'resetpass' );
         if ( in_array( $action, $skip_actions, true ) ) {
             return;
@@ -105,10 +105,10 @@ class OIDC_Login {
     }
 
     public function render_error_message() {
-        if ( ! isset( $_GET['oidc_error'] ) ) {
+        if ( ! isset( $_GET['oidc_error'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Fehleranzeige aus OIDC-Callback, kein sensitives Formular.
             return;
         }
-        $error = sanitize_text_field( urldecode( wp_unslash( $_GET['oidc_error'] ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $error = sanitize_text_field( urldecode( wp_unslash( $_GET['oidc_error'] ) ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized, WordPress.Security.NonceVerification.Recommended
         if ( ! empty( $error ) ) {
             printf(
                 '<div class="oidc-error"><p>%s</p></div>',
