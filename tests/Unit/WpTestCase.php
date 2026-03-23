@@ -12,6 +12,8 @@ use Brain\Monkey;
 use Mockery\Adapter\Phpunit\MockeryPHPUnitIntegration;
 use PHPUnit\Framework\TestCase;
 
+class OidcTestException extends \Exception {}
+
 abstract class WpTestCase extends TestCase {
 
     use MockeryPHPUnitIntegration;

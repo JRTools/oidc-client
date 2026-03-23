@@ -157,6 +157,7 @@ class TokensTest extends WpTestCase {
             'access_token' => 'my-access-token',
             'refresh_token' => 'my-refresh-token',
         ) );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_store_tokens_saves_all_tokens_when_refresh_enabled() {
@@ -201,6 +202,7 @@ class TokensTest extends WpTestCase {
 
         $tokens = new OIDC_Tokens();
         $tokens->store_tokens( 1, array() );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_store_tokens_default_expires_in_when_missing() {
@@ -225,7 +227,7 @@ class TokensTest extends WpTestCase {
         $tokens->store_tokens( 1, array( 'access_token' => 'acc' ) );
 
         $this->assertNotNull( $expires_value );
-        $this->assertGreaterThan( time() + 3500, $expires_value );
+        $this->assertGreaterThan( time() + 3500, (int) $expires_value );
     }
 
     // -------------------------------------------------------------------------

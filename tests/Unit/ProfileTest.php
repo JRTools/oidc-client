@@ -237,11 +237,11 @@ class ProfileTest extends WpTestCase {
         Functions\when( 'wp_verify_nonce' )->justReturn( false );
         Functions\when( 'esc_html__' )->returnArg();
         Functions\when( 'wp_die' )->alias( function ( $msg ) {
-            throw new RuntimeException( $msg );
+            throw new OidcTestException( $msg );
         } );
 
         $profile = new OIDC_Profile();
-        $this->expectException( RuntimeException::class );
+        $this->expectException( OidcTestException::class );
         $profile->initiate_link_login();
     }
 
@@ -259,5 +259,6 @@ class ProfileTest extends WpTestCase {
 
         $profile = new OIDC_Profile();
         $profile->initiate_link_login();
+        $this->addToAssertionCount( 1 );
     }
 }

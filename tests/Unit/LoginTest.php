@@ -218,6 +218,7 @@ class LoginTest extends WpTestCase {
 
         $login = new OIDC_Login();
         $login->maybe_auto_login();
+        $this->addToAssertionCount( 1 );
     }
 
     // -------------------------------------------------------------------------
@@ -241,11 +242,11 @@ class LoginTest extends WpTestCase {
         Functions\when( 'wp_verify_nonce' )->justReturn( false );
         Functions\when( 'esc_html__' )->returnArg();
         Functions\when( 'wp_die' )->alias( function ( $msg ) {
-            throw new RuntimeException( $msg );
+            throw new OidcTestException( $msg );
         } );
 
         $login = new OIDC_Login();
-        $this->expectException( RuntimeException::class );
+        $this->expectException( OidcTestException::class );
         $login->handle_login_action();
     }
 
@@ -260,5 +261,6 @@ class LoginTest extends WpTestCase {
 
         $login = new OIDC_Login();
         $login->handle_login_action();
+        $this->addToAssertionCount( 1 );
     }
 }
