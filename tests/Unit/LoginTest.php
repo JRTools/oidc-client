@@ -263,4 +263,73 @@ class LoginTest extends WpTestCase {
         $login->handle_login_action();
         $this->addToAssertionCount( 1 );
     }
+
+    // -------------------------------------------------------------------------
+    // enqueue_styles
+    // -------------------------------------------------------------------------
+
+    public function test_enqueue_styles_skips_when_no_client_id() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            return $key === 'oidc_client_id' ? '' : $default;
+        } );
+        Functions\expect( 'wp_enqueue_style' )->never();
+
+        $login = new OIDC_Login();
+        $login->enqueue_styles();
+        $this->addToAssertionCount( 1 );
+    }
+
+    public function test_enqueue_styles_enqueues_when_client_id_set() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            return $key === 'oidc_client_id' ? 'my-client-id' : $default;
+        } );
+        Functions\expect( 'wp_enqueue_style' )->once()->with( 'oidc-login', \Mockery::type( 'string' ), \Mockery::type( 'array' ), \Mockery::any() );
+
+        $login = new OIDC_Login();
+        $login->enqueue_styles();
+        $this->addToAssertionCount( 1 );
+    }
+
+    // -------------------------------------------------------------------------
+    // render_login_button
+    // -------------------------------------------------------------------------
+
+    public function test_render_login_button_outputs_nothing_without_client_id() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            return $key === 'oidc_client_id' ? '' : $default;
+        } );
+
+        $login = new OIDC_Login();
+        ob_start();
+        $login->render_login_button();
+        $output = ob_get_clean();
+
+        $this->assertSame( '', $output );
+    }
+
+    public function test_render_login_button_outputs_link_with_client_id() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_client_id' ) {
+                return 'my-client-id';
+            }
+            if ( $key === 'oidc_provider_name' ) {
+                return 'TestProvider';
+            }
+            return $default;
+        } );
+        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_login=1' );
+        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
+        Functions\when( 'wp_nonce_url' )->justReturn( 'https://example.com/wp-login.php?oidc_login=1&_wpnonce=abc' );
+        Functions\when( 'esc_url' )->returnArg();
+        Functions\when( 'esc_html' )->returnArg();
+        Functions\when( 'esc_html_e' )->justReturn( null );
+        Functions\when( '__' )->returnArg();
+
+        $login = new OIDC_Login();
+        ob_start();
+        $login->render_login_button();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString( 'oidc-login-button', $output );
+    }
 }

@@ -13,6 +13,17 @@ use Brain\Monkey;
 // Mindest-WordPress-Konstanten
 require_once __DIR__ . '/stubs/constants.php';
 
+// Plugin-spezifische Konstanten
+if ( ! defined( 'OIDC_CLIENT_VERSION' ) ) {
+    define( 'OIDC_CLIENT_VERSION', '1.0.0' );
+}
+if ( ! defined( 'OIDC_CLIENT_DIR' ) ) {
+    define( 'OIDC_CLIENT_DIR', __DIR__ . '/../' );
+}
+if ( ! defined( 'OIDC_CLIENT_URL' ) ) {
+    define( 'OIDC_CLIENT_URL', 'https://example.com/wp-content/plugins/oidc-client/' );
+}
+
 // WP_Error Stub
 if ( ! class_exists( 'WP_Error' ) ) {
     class WP_Error {
