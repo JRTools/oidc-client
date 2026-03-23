@@ -35,6 +35,39 @@ class OIDC_Admin {
     // Settings API registrieren
     // -------------------------------------------------------------------------
 
+    /**
+     * Wrapper um add_settings_field() mit festem Page-Parameter 'oidc-client'.
+     *
+     * @param string       $id       Feld-ID / Option-Name.
+     * @param string       $label    Angezeigter Feldname.
+     * @param callable     $callback Render-Callback.
+     * @param string       $section  Settings-Abschnitts-ID.
+     * @param array<mixed> $args     Optionale Argumente für den Callback.
+     */
+    private function add_field( $id, $label, $callback, $section, $args = array() ) {
+        add_settings_field( $id, $label, $callback, 'oidc-client', $section, $args );
+    }
+
+    /**
+     * Rendert ein <select>-Element mit <option>-Einträgen.
+     *
+     * @param string               $name    Name- und ID-Attribut des Selects.
+     * @param array<string,string> $options Assoziatives Array value => label.
+     * @param string               $current Aktuell gespeicherter Wert.
+     */
+    private function render_select( $name, array $options, $current ) {
+        printf( '<select name="%1$s" id="%1$s">', esc_attr( $name ) );
+        foreach ( $options as $value => $label ) {
+            printf(
+                '<option value="%s"%s>%s</option>',
+                esc_attr( $value ),
+                selected( $current, $value, false ),
+                esc_html( $label )
+            );
+        }
+        echo '</select>';
+    }
+
     public function register_settings() {
         $options = array(
             'oidc_discovery_url'          => 'esc_url_raw',
@@ -86,72 +119,35 @@ class OIDC_Admin {
             'oidc-client'
         );
 
-        add_settings_field(
-            'oidc_discovery_url',
-            __( 'Discovery URL', 'oidc-client' ),
-            array( $this, 'field_discovery_url' ),
-            'oidc-client',
-            'oidc_section_provider'
-        );
-        add_settings_field(
+        $this->add_field( 'oidc_discovery_url', __( 'Discovery URL', 'oidc-client' ), array( $this, 'field_discovery_url' ), 'oidc_section_provider' );
+        $this->add_field(
             'oidc_provider_name',
             __( 'Provider-Name', 'oidc-client' ),
             array( $this, 'field_text' ),
-            'oidc-client',
             'oidc_section_provider',
             array(
                 'option'      => 'oidc_provider_name',
                 'description' => __( 'Wird im Login-Button angezeigt: „Login mit …"', 'oidc-client' ),
             )
         );
-        add_settings_field(
+        $this->add_field(
             'oidc_issuer',
             __( 'Issuer', 'oidc-client' ),
             array( $this, 'field_text' ),
-            'oidc-client',
             'oidc_section_provider',
             array(
                 'option'      => 'oidc_issuer',
                 'description' => __( 'Wird automatisch aus der Discovery-URL befüllt.', 'oidc-client' ),
             )
         );
-        add_settings_field(
-            'oidc_authorization_endpoint',
-            __( 'Authorization Endpoint', 'oidc-client' ),
-            array( $this, 'field_url' ),
-            'oidc-client',
-            'oidc_section_provider',
-            array( 'option' => 'oidc_authorization_endpoint' )
-        );
-        add_settings_field(
-            'oidc_token_endpoint',
-            __( 'Token Endpoint', 'oidc-client' ),
-            array( $this, 'field_url' ),
-            'oidc-client',
-            'oidc_section_provider',
-            array( 'option' => 'oidc_token_endpoint' )
-        );
-        add_settings_field(
-            'oidc_userinfo_endpoint',
-            __( 'Userinfo Endpoint', 'oidc-client' ),
-            array( $this, 'field_url' ),
-            'oidc-client',
-            'oidc_section_provider',
-            array( 'option' => 'oidc_userinfo_endpoint' )
-        );
-        add_settings_field(
-            'oidc_jwks_uri',
-            __( 'JWKS URI', 'oidc-client' ),
-            array( $this, 'field_url' ),
-            'oidc-client',
-            'oidc_section_provider',
-            array( 'option' => 'oidc_jwks_uri' )
-        );
-        add_settings_field(
+        $this->add_field( 'oidc_authorization_endpoint', __( 'Authorization Endpoint', 'oidc-client' ), array( $this, 'field_url' ), 'oidc_section_provider', array( 'option' => 'oidc_authorization_endpoint' ) );
+        $this->add_field( 'oidc_token_endpoint', __( 'Token Endpoint', 'oidc-client' ), array( $this, 'field_url' ), 'oidc_section_provider', array( 'option' => 'oidc_token_endpoint' ) );
+        $this->add_field( 'oidc_userinfo_endpoint', __( 'Userinfo Endpoint', 'oidc-client' ), array( $this, 'field_url' ), 'oidc_section_provider', array( 'option' => 'oidc_userinfo_endpoint' ) );
+        $this->add_field( 'oidc_jwks_uri', __( 'JWKS URI', 'oidc-client' ), array( $this, 'field_url' ), 'oidc_section_provider', array( 'option' => 'oidc_jwks_uri' ) );
+        $this->add_field(
             'oidc_pkce_supported',
             __( 'PKCE (S256)', 'oidc-client' ),
             array( $this, 'field_checkbox' ),
-            'oidc-client',
             'oidc_section_provider',
             array(
                 'option'      => 'oidc_pkce_supported',
@@ -160,34 +156,14 @@ class OIDC_Admin {
         );
 
         // ----- Abschnitt 2: Client -----
-        add_settings_section(
-            'oidc_section_client',
-            __( 'Client', 'oidc-client' ),
-            null,
-            'oidc-client'
-        );
+        add_settings_section( 'oidc_section_client', __( 'Client', 'oidc-client' ), null, 'oidc-client' );
 
-        add_settings_field(
-            'oidc_client_id',
-            __( 'Client ID', 'oidc-client' ),
-            array( $this, 'field_text' ),
-            'oidc-client',
-            'oidc_section_client',
-            array( 'option' => 'oidc_client_id' )
-        );
-        add_settings_field(
-            'oidc_client_secret',
-            __( 'Client Secret', 'oidc-client' ),
-            array( $this, 'field_password' ),
-            'oidc-client',
-            'oidc_section_client',
-            array( 'option' => 'oidc_client_secret' )
-        );
-        add_settings_field(
+        $this->add_field( 'oidc_client_id', __( 'Client ID', 'oidc-client' ), array( $this, 'field_text' ), 'oidc_section_client', array( 'option' => 'oidc_client_id' ) );
+        $this->add_field( 'oidc_client_secret', __( 'Client Secret', 'oidc-client' ), array( $this, 'field_password' ), 'oidc_section_client', array( 'option' => 'oidc_client_secret' ) );
+        $this->add_field(
             'oidc_scopes',
             __( 'Scopes', 'oidc-client' ),
             array( $this, 'field_text' ),
-            'oidc-client',
             'oidc_section_client',
             array(
                 'option'      => 'oidc_scopes',
@@ -195,52 +171,27 @@ class OIDC_Admin {
                 'description' => __( 'Leerzeichen-getrennte Liste, z. B. „openid email profile"', 'oidc-client' ),
             )
         );
-        add_settings_field(
-            'oidc_redirect_uri',
-            __( 'Redirect URI', 'oidc-client' ),
-            array( $this, 'field_redirect_uri' ),
-            'oidc-client',
-            'oidc_section_client'
-        );
-        add_settings_field(
-            'oidc_token_auth_method',
-            __( 'Token-Endpoint Authentifizierung', 'oidc-client' ),
-            array( $this, 'field_token_auth_method' ),
-            'oidc-client',
-            'oidc_section_client'
-        );
+        $this->add_field( 'oidc_redirect_uri', __( 'Redirect URI', 'oidc-client' ), array( $this, 'field_redirect_uri' ), 'oidc_section_client' );
+        $this->add_field( 'oidc_token_auth_method', __( 'Token-Endpoint Authentifizierung', 'oidc-client' ), array( $this, 'field_token_auth_method' ), 'oidc_section_client' );
 
         // ----- Abschnitt 3: Benutzerverwaltung -----
-        add_settings_section(
-            'oidc_section_users',
-            __( 'Benutzerverwaltung', 'oidc-client' ),
-            null,
-            'oidc-client'
-        );
+        add_settings_section( 'oidc_section_users', __( 'Benutzerverwaltung', 'oidc-client' ), null, 'oidc-client' );
 
-        add_settings_field(
+        $this->add_field(
             'oidc_create_user',
             __( 'Benutzer automatisch anlegen', 'oidc-client' ),
             array( $this, 'field_checkbox' ),
-            'oidc-client',
             'oidc_section_users',
             array(
                 'option'      => 'oidc_create_user',
                 'description' => __( 'Falls kein lokales Konto existiert, wird automatisch eines erstellt.', 'oidc-client' ),
             )
         );
-        add_settings_field(
-            'oidc_default_role',
-            __( 'Standard-Rolle für neue Benutzer', 'oidc-client' ),
-            array( $this, 'field_roles_dropdown' ),
-            'oidc-client',
-            'oidc_section_users'
-        );
-        add_settings_field(
+        $this->add_field( 'oidc_default_role', __( 'Standard-Rolle für neue Benutzer', 'oidc-client' ), array( $this, 'field_roles_dropdown' ), 'oidc_section_users' );
+        $this->add_field(
             'oidc_debug_mode',
             __( 'Debug-Modus', 'oidc-client' ),
             array( $this, 'field_checkbox' ),
-            'oidc-client',
             'oidc_section_users',
             array(
                 'option'      => 'oidc_debug_mode',
@@ -249,135 +200,101 @@ class OIDC_Admin {
         );
 
         // ----- Abschnitt 4: Erweiterte Optionen -----
-        add_settings_section(
-            'oidc_section_advanced',
-            __( 'Erweiterte Optionen', 'oidc-client' ),
-            null,
-            'oidc-client'
-        );
+        add_settings_section( 'oidc_section_advanced', __( 'Erweiterte Optionen', 'oidc-client' ), null, 'oidc-client' );
 
-        add_settings_field(
-            'oidc_end_session_endpoint',
-            __( 'End-Session Endpoint', 'oidc-client' ),
-            array( $this, 'field_url' ),
-            'oidc-client',
-            'oidc_section_advanced',
-            array( 'option' => 'oidc_end_session_endpoint' )
-        );
-        add_settings_field(
+        $this->add_field( 'oidc_end_session_endpoint', __( 'End-Session Endpoint', 'oidc-client' ), array( $this, 'field_url' ), 'oidc_section_advanced', array( 'option' => 'oidc_end_session_endpoint' ) );
+        $this->add_field(
             'oidc_enable_refresh',
             __( 'Token-Refresh', 'oidc-client' ),
             array( $this, 'field_checkbox' ),
-            'oidc-client',
             'oidc_section_advanced',
             array(
                 'option'      => 'oidc_enable_refresh',
                 'description' => __( 'Refresh-Token und Access-Token nach Login speichern und automatisch erneuern.', 'oidc-client' ),
             )
         );
-        add_settings_field(
+        $this->add_field(
             'oidc_active_claim',
             __( 'Active-Claim', 'oidc-client' ),
             array( $this, 'field_text' ),
-            'oidc-client',
             'oidc_section_advanced',
             array(
                 'option'      => 'oidc_active_claim',
                 'description' => __( 'Claim-Name der Aktivierung (z. B. „active" oder „email_verified"). Login wird verweigert wenn false/0.', 'oidc-client' ),
             )
         );
-        add_settings_field(
+        $this->add_field(
             'oidc_sync_avatar',
             __( 'Profilbild synchronisieren', 'oidc-client' ),
             array( $this, 'field_checkbox' ),
-            'oidc-client',
             'oidc_section_advanced',
             array(
                 'option'      => 'oidc_sync_avatar',
                 'description' => __( 'Profilbild (picture-Claim) vom Provider übernehmen und als WordPress-Avatar anzeigen.', 'oidc-client' ),
             )
         );
-        add_settings_field(
+        $this->add_field(
             'oidc_hide_wp_login',
             __( 'WP-Login-Formular ausblenden', 'oidc-client' ),
             array( $this, 'field_checkbox' ),
-            'oidc-client',
             'oidc_section_advanced',
             array(
                 'option'      => 'oidc_hide_wp_login',
                 'description' => __( 'Standard-WordPress-Loginformular ausblenden. Mit ?showlogin=1 weiterhin erreichbar.', 'oidc-client' ),
             )
         );
-        add_settings_field(
+        $this->add_field(
             'oidc_auto_login',
             __( 'Auto-Login', 'oidc-client' ),
             array( $this, 'field_checkbox' ),
-            'oidc-client',
             'oidc_section_advanced',
             array(
                 'option'      => 'oidc_auto_login',
                 'description' => __( 'Automatisch zum OIDC-Provider weiterleiten wenn die Login-Seite aufgerufen wird.', 'oidc-client' ),
             )
         );
-        add_settings_field(
-            'oidc_button_icon_url',
-            __( 'Button-Icon URL', 'oidc-client' ),
-            array( $this, 'field_url' ),
-            'oidc-client',
-            'oidc_section_advanced',
-            array( 'option' => 'oidc_button_icon_url' )
-        );
-        add_settings_field(
+        $this->add_field( 'oidc_button_icon_url', __( 'Button-Icon URL', 'oidc-client' ), array( $this, 'field_url' ), 'oidc_section_advanced', array( 'option' => 'oidc_button_icon_url' ) );
+        $this->add_field(
             'oidc_token_encryption',
             __( 'Token-Verschlüsselung', 'oidc-client' ),
             array( $this, 'field_checkbox' ),
-            'oidc-client',
             'oidc_section_advanced',
             array(
                 'option'      => 'oidc_token_encryption',
                 'description' => __( 'Access-, Refresh- und ID-Token verschlüsselt in der Datenbank speichern (AES-256-CBC). Erfordert PHP OpenSSL.', 'oidc-client' ),
             )
         );
-        add_settings_field(
+        $this->add_field(
             'oidc_lock_email',
             __( 'E-Mail sperren', 'oidc-client' ),
             array( $this, 'field_checkbox' ),
-            'oidc-client',
             'oidc_section_advanced',
             array(
                 'option'      => 'oidc_lock_email',
                 'description' => __( 'OIDC-Nutzer können ihre E-Mail-Adresse nicht selbst ändern.', 'oidc-client' ),
             )
         );
-        add_settings_field(
+        $this->add_field(
             'oidc_lock_password',
             __( 'Passwort sperren', 'oidc-client' ),
             array( $this, 'field_checkbox' ),
-            'oidc-client',
             'oidc_section_advanced',
             array(
                 'option'      => 'oidc_lock_password',
                 'description' => __( 'OIDC-Nutzer können ihr Passwort nicht selbst ändern.', 'oidc-client' ),
             )
         );
-        add_settings_field(
+        $this->add_field(
             'oidc_session_management',
             __( 'Session-Management', 'oidc-client' ),
             array( $this, 'field_checkbox' ),
-            'oidc-client',
             'oidc_section_advanced',
             array(
                 'option'      => 'oidc_session_management',
                 'description' => __( 'Session an Token-Ablauf binden: Bei jedem Request Token prüfen, Refresh versuchen, sonst ausloggen. Erfordert Token-Refresh.', 'oidc-client' ),
             )
         );
-        add_settings_field(
-            'oidc_remember_me',
-            __( 'Angemeldet bleiben', 'oidc-client' ),
-            array( $this, 'field_remember_me' ),
-            'oidc-client',
-            'oidc_section_advanced'
-        );
+        $this->add_field( 'oidc_remember_me', __( 'Angemeldet bleiben', 'oidc-client' ), array( $this, 'field_remember_me' ), 'oidc_section_advanced' );
 
         // ----- Abschnitt 5: Rollen-Mapping -----
         add_settings_section(
@@ -387,24 +304,17 @@ class OIDC_Admin {
             'oidc-client'
         );
 
-        add_settings_field(
+        $this->add_field(
             'oidc_role_claim',
             __( 'Rollen-Claim', 'oidc-client' ),
             array( $this, 'field_text' ),
-            'oidc-client',
             'oidc_section_roles',
             array(
                 'option'      => 'oidc_role_claim',
                 'description' => __( 'Name des Claims der Rollen enthält, z. B. „roles" oder „groups".', 'oidc-client' ),
             )
         );
-        add_settings_field(
-            'oidc_role_mapping',
-            __( 'Rollen-Mapping', 'oidc-client' ),
-            array( $this, 'field_role_mapping' ),
-            'oidc-client',
-            'oidc_section_roles'
-        );
+        $this->add_field( 'oidc_role_mapping', __( 'Rollen-Mapping', 'oidc-client' ), array( $this, 'field_role_mapping' ), 'oidc_section_roles' );
     }
 
     // -------------------------------------------------------------------------
@@ -647,16 +557,7 @@ class OIDC_Admin {
             'client_secret_post'  => __( 'client_secret_post – Credentials im POST-Body (Standard, z. B. easyVerein, Keycloak)', 'oidc-client' ),
             'client_secret_basic' => __( 'client_secret_basic – HTTP Basic Auth (z. B. Azure AD, Okta)', 'oidc-client' ),
         );
-        echo '<select name="oidc_token_auth_method" id="oidc_token_auth_method">';
-        foreach ( $methods as $value => $label ) {
-            printf(
-                '<option value="%s"%s>%s</option>',
-                esc_attr( $value ),
-                selected( $current, $value, false ),
-                esc_html( $label )
-            );
-        }
-        echo '</select>';
+        $this->render_select( 'oidc_token_auth_method', $methods, $current );
         echo '<p class="description">' . esc_html__( 'Wie sich dieses Plugin beim Token-Endpoint authentifiziert. Bei „invalid_client"-Fehlern die andere Methode probieren.', 'oidc-client' ) . '</p>';
     }
 
@@ -675,16 +576,11 @@ class OIDC_Admin {
     public function field_roles_dropdown() {
         $current = get_option( 'oidc_default_role', 'subscriber' );
         $roles   = wp_roles()->roles;
-        echo '<select name="oidc_default_role" id="oidc_default_role">';
+        $options = array();
         foreach ( $roles as $role_key => $role_data ) {
-            printf(
-                '<option value="%s"%s>%s</option>',
-                esc_attr( $role_key ),
-                selected( $current, $role_key, false ),
-                esc_html( translate_user_role( $role_data['name'] ) )
-            );
+            $options[ $role_key ] = translate_user_role( $role_data['name'] );
         }
-        echo '</select>';
+        $this->render_select( 'oidc_default_role', $options, $current );
     }
 
     public function field_remember_me() {
@@ -693,16 +589,7 @@ class OIDC_Admin {
             'never'  => __( 'Nie – Sitzung endet beim Schließen des Browsers', 'oidc-client' ),
             'always' => __( 'Immer – Dauerhaftes Auth-Cookie (14 Tage)', 'oidc-client' ),
         );
-        echo '<select name="oidc_remember_me" id="oidc_remember_me">';
-        foreach ( $options as $value => $label ) {
-            printf(
-                '<option value="%s"%s>%s</option>',
-                esc_attr( $value ),
-                selected( $current, $value, false ),
-                esc_html( $label )
-            );
-        }
-        echo '</select>';
+        $this->render_select( 'oidc_remember_me', $options, $current );
     }
 
     // -------------------------------------------------------------------------
