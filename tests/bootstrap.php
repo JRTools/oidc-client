@@ -13,17 +13,6 @@ use Brain\Monkey;
 // Mindest-WordPress-Konstanten
 require_once __DIR__ . '/stubs/constants.php';
 
-// Plugin-spezifische Konstanten
-if ( ! defined( 'OIDC_CLIENT_VERSION' ) ) {
-    define( 'OIDC_CLIENT_VERSION', '1.0.0' );
-}
-if ( ! defined( 'OIDC_CLIENT_DIR' ) ) {
-    define( 'OIDC_CLIENT_DIR', __DIR__ . '/../' );
-}
-if ( ! defined( 'OIDC_CLIENT_URL' ) ) {
-    define( 'OIDC_CLIENT_URL', 'https://example.com/wp-content/plugins/oidc-client/' );
-}
-
 // WP_Error Stub
 if ( ! class_exists( 'WP_Error' ) ) {
     class WP_Error {
@@ -101,7 +90,31 @@ if ( ! class_exists( 'WP_Comment' ) ) {
     }
 }
 
-// Plugin-Klassen laden (ohne ABSPATH-Check, da wir ihn oben definiert haben)
+// WP-Funktions-Stubs für den Ladevorgang von Plugin-Dateien.
+// WICHTIG: Nur Funktionen definieren, die NICHT per Brain\Monkey gemockt werden!
+// add_action, add_filter, get_option etc. werden von Brain\Monkey per Test gemockt
+// und dürfen daher NICHT hier als PHP-Funktionen definiert werden.
+if ( ! function_exists( 'plugin_dir_path' ) ) {
+    function plugin_dir_path( $file ) {
+        return dirname( $file ) . '/';
+    }
+}
+if ( ! function_exists( 'plugin_dir_url' ) ) {
+    function plugin_dir_url( $file ) {
+        return 'https://example.com/wp-content/plugins/oidc-client/';
+    }
+}
+if ( ! function_exists( 'register_activation_hook' ) ) {
+    function register_activation_hook( $file, $callback ) {}
+}
+
+// Plugin-Klassen laden
 require_once __DIR__ . '/../includes/class-oidc-jwt-helper.php';
 require_once __DIR__ . '/../includes/class-oidc-tokens.php';
 require_once __DIR__ . '/../includes/class-oidc-roles.php';
+require_once __DIR__ . '/../includes/class-oidc-admin.php';
+require_once __DIR__ . '/../includes/class-oidc-auth.php';
+require_once __DIR__ . '/../includes/class-oidc-log.php';
+require_once __DIR__ . '/../includes/class-oidc-login.php';
+require_once __DIR__ . '/../includes/class-oidc-logout.php';
+require_once __DIR__ . '/../includes/class-oidc-profile.php';
