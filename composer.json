@@ -20,7 +20,7 @@
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
         "phpstan/phpstan": "^2.0",
         "szepeviktor/phpstan-wordpress": "^2.0",
-        "infection/infection": "^0.29"
+        "infection/infection": "^0.32"
     },
     "autoload": {
         "classmap": [
