@@ -158,7 +158,7 @@ class AdminTest extends WpTestCase {
     }
 
     public function test_field_text_uses_default_when_option_empty() {
-        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+        Functions\when( 'get_option' )->alias( function ( $_key, $default = '' ) {
             return $default;
         } );
         Functions\when( 'esc_attr' )->returnArg();
@@ -216,7 +216,7 @@ class AdminTest extends WpTestCase {
         Functions\when( 'get_option' )->justReturn( '1' );
         Functions\when( 'esc_attr' )->returnArg();
         Functions\when( 'esc_html' )->returnArg();
-        Functions\when( 'checked' )->alias( function ( $checked, $current, $echo = true ) {
+        Functions\when( 'checked' )->alias( function ( $checked, $current, $_echo = true ) {
             return ( $checked == $current ) ? ' checked="checked"' : '';
         } );
 
@@ -232,7 +232,7 @@ class AdminTest extends WpTestCase {
         Functions\when( 'get_option' )->justReturn( '' );
         Functions\when( 'esc_attr' )->returnArg();
         Functions\when( 'esc_html' )->returnArg();
-        Functions\when( 'checked' )->alias( function ( $checked, $current, $echo = true ) {
+        Functions\when( 'checked' )->alias( function ( $checked, $current, $_echo = true ) {
             return ( $checked == $current ) ? ' checked="checked"' : '';
         } );
 

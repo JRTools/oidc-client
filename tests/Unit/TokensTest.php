@@ -171,7 +171,7 @@ class TokensTest extends WpTestCase {
         } );
 
         $update_calls = array();
-        Functions\when( 'update_user_meta' )->alias( function ( $user_id, $meta_key, $value ) use ( &$update_calls ) {
+        Functions\when( 'update_user_meta' )->alias( function ( $_user_id, $meta_key, $_value ) use ( &$update_calls ) {
             $update_calls[] = $meta_key;
         } );
 
@@ -215,7 +215,7 @@ class TokensTest extends WpTestCase {
         } );
 
         $expires_value = null;
-        Functions\when( 'update_user_meta' )->alias( function ( $user_id, $meta_key, $value ) use ( &$expires_value ) {
+        Functions\when( 'update_user_meta' )->alias( function ( $_user_id, $meta_key, $value ) use ( &$expires_value ) {
             if ( $meta_key === '_oidc_access_token_expires' ) {
                 $expires_value = $value;
             }
@@ -224,7 +224,6 @@ class TokensTest extends WpTestCase {
         $tokens = new OIDC_Tokens();
         $tokens->store_tokens( 1, array( 'access_token' => 'acc' ) );
 
-        // Default: 3600 Sekunden ab jetzt
         $this->assertNotNull( $expires_value );
         $this->assertGreaterThan( time() + 3500, $expires_value );
     }
@@ -235,7 +234,7 @@ class TokensTest extends WpTestCase {
 
     public function test_clear_tokens_deletes_access_and_refresh_meta() {
         $deleted = array();
-        Functions\when( 'delete_user_meta' )->alias( function ( $user_id, $meta_key ) use ( &$deleted ) {
+        Functions\when( 'delete_user_meta' )->alias( function ( $_user_id, $meta_key ) use ( &$deleted ) {
             $deleted[] = $meta_key;
         } );
 
@@ -250,7 +249,7 @@ class TokensTest extends WpTestCase {
 
     public function test_clear_all_tokens_also_deletes_id_token() {
         $deleted = array();
-        Functions\when( 'delete_user_meta' )->alias( function ( $user_id, $meta_key ) use ( &$deleted ) {
+        Functions\when( 'delete_user_meta' )->alias( function ( $_user_id, $meta_key ) use ( &$deleted ) {
             $deleted[] = $meta_key;
         } );
 
@@ -269,7 +268,7 @@ class TokensTest extends WpTestCase {
     public function test_get_valid_access_token_returns_token_when_valid() {
         Functions\when( 'get_option' )->justReturn( '' );
 
-        Functions\when( 'get_user_meta' )->alias( function ( $user_id, $meta_key, $single ) {
+        Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
             if ( $meta_key === '_oidc_access_token' ) {
                 return 'valid-access-token';
             }
@@ -290,7 +289,7 @@ class TokensTest extends WpTestCase {
             return $default; // oidc_token_encryption = ''
         } );
 
-        Functions\when( 'get_user_meta' )->alias( function ( $user_id, $meta_key, $single ) {
+        Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
             if ( $meta_key === '_oidc_access_token' ) {
                 return ''; // kein Token
             }

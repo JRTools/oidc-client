@@ -244,38 +244,50 @@ class AuthTest extends WpTestCase {
         Functions\expect( 'is_user_logged_in' )->never();
 
         $this->auth->check_session_validity();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_check_session_validity_refresh_disabled_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_session_management' ) return '1';
-            if ( $key === 'oidc_enable_refresh' ) return '';
+            if ( $key === 'oidc_session_management' ) {
+                return '1';
+            }
+            if ( $key === 'oidc_enable_refresh' ) {
+                return '';
+            }
             return $default;
         } );
         Functions\expect( 'is_user_logged_in' )->never();
 
         $this->auth->check_session_validity();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_check_session_validity_not_logged_in_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_session_management' ) return '1';
-            if ( $key === 'oidc_enable_refresh' ) return '1';
+            if ( $key === 'oidc_session_management' ) {
+                return '1';
+            }
+            if ( $key === 'oidc_enable_refresh' ) {
+                return '1';
+            }
             return $default;
         } );
         Functions\when( 'is_user_logged_in' )->justReturn( false );
         Functions\expect( 'get_current_user_id' )->never();
 
         $this->auth->check_session_validity();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_check_session_validity_no_oidc_subject_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_session_management' ) return '1';
-            if ( $key === 'oidc_enable_refresh' ) return '1';
+            if ( $key === 'oidc_session_management' ) {
+                return '1';
+            }
+            if ( $key === 'oidc_enable_refresh' ) {
+                return '1';
+            }
             return $default;
         } );
         Functions\when( 'is_user_logged_in' )->justReturn( true );
@@ -284,6 +296,6 @@ class AuthTest extends WpTestCase {
         Functions\expect( 'wp_logout' )->never();
 
         $this->auth->check_session_validity();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 }

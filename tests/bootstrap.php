@@ -60,7 +60,7 @@ if ( ! class_exists( 'WP_Error' ) ) {
         public function add( $code, $message, $data = '' ) {
             $this->code    = $code;
             $this->message = $message;
-            $this->data    = $data;
+            $this->data    = $data ?: $this->data;
         }
     }
 }

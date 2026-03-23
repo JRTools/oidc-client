@@ -46,7 +46,7 @@ class ProfileTest extends WpTestCase {
 
         $profile = new OIDC_Profile();
         $profile->maybe_lock_email( $errors, true, $user );
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_lock_email_not_update_returns_early() {
@@ -61,7 +61,7 @@ class ProfileTest extends WpTestCase {
 
         $profile = new OIDC_Profile();
         $profile->maybe_lock_email( $errors, false, $user );
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_lock_email_no_oidc_subject_returns_early() {
@@ -77,7 +77,7 @@ class ProfileTest extends WpTestCase {
 
         $profile = new OIDC_Profile();
         $profile->maybe_lock_email( $errors, true, $user );
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_lock_email_same_email_no_error() {
@@ -140,7 +140,7 @@ class ProfileTest extends WpTestCase {
 
         $profile = new OIDC_Profile();
         $profile->maybe_lock_password( $errors, true, $user );
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_lock_password_no_oidc_subject_returns_early() {
@@ -205,7 +205,7 @@ class ProfileTest extends WpTestCase {
 
         $profile = new OIDC_Profile();
         $profile->initiate_link_login();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_initiate_link_login_wrong_value_returns_early() {
@@ -214,7 +214,7 @@ class ProfileTest extends WpTestCase {
 
         $profile = new OIDC_Profile();
         $profile->initiate_link_login();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_initiate_link_login_not_logged_in_returns_early() {
@@ -224,7 +224,7 @@ class ProfileTest extends WpTestCase {
 
         $profile = new OIDC_Profile();
         $profile->initiate_link_login();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_initiate_link_login_invalid_nonce_calls_wp_die() {

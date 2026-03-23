@@ -134,7 +134,7 @@ class LoginTest extends WpTestCase {
 
         $login = new OIDC_Login();
         $login->maybe_auto_login();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_auto_login_logged_in_does_nothing() {
@@ -146,7 +146,7 @@ class LoginTest extends WpTestCase {
 
         $login = new OIDC_Login();
         $login->maybe_auto_login();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_auto_login_showlogin_param_skips() {
@@ -160,7 +160,7 @@ class LoginTest extends WpTestCase {
 
         $login = new OIDC_Login();
         $login->maybe_auto_login();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_auto_login_loggedout_param_skips() {
@@ -174,7 +174,7 @@ class LoginTest extends WpTestCase {
 
         $login = new OIDC_Login();
         $login->maybe_auto_login();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_auto_login_oidc_error_param_skips() {
@@ -188,7 +188,7 @@ class LoginTest extends WpTestCase {
 
         $login = new OIDC_Login();
         $login->maybe_auto_login();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_auto_login_logout_action_skips() {
@@ -204,7 +204,7 @@ class LoginTest extends WpTestCase {
 
         $login = new OIDC_Login();
         $login->maybe_auto_login();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_auto_login_fires_do_action() {
@@ -229,7 +229,7 @@ class LoginTest extends WpTestCase {
 
         $login = new OIDC_Login();
         $login->handle_login_action();
-        $this->assertTrue( true );
+        $this->addToAssertionCount( 1 );
     }
 
     public function test_handle_login_action_invalid_nonce_calls_wp_die() {
