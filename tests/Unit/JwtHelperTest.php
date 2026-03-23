@@ -2,13 +2,13 @@
 /**
  * Tests für OIDC_JWT_Helper.
  *
- * Diese Tests prüfen ausschließlich reine PHP-Logik ohne WP-Funktionen.
  * WP_Error wird als Stub bereitgestellt (tests/bootstrap.php).
  */
 
 require_once __DIR__ . '/WpTestCase.php';
 
 use Brain\Monkey;
+use Brain\Monkey\Functions;
 
 class JwtHelperTest extends WpTestCase {
 
@@ -33,9 +33,9 @@ class JwtHelperTest extends WpTestCase {
 
     public function test_base64url_decode_padding_added() {
         // Ohne Padding muss die Methode es ergänzen
-        $input    = base64_encode( 'ab' ); // "YWI=" (1 Pad-Zeichen)
-        $urlsafe  = rtrim( strtr( $input, '+/', '-_' ), '=' );
-        $result   = OIDC_JWT_Helper::base64url_decode( $urlsafe );
+        $input   = base64_encode( 'ab' ); // "YWI=" (1 Pad-Zeichen)
+        $urlsafe = rtrim( strtr( $input, '+/', '-_' ), '=' );
+        $result  = OIDC_JWT_Helper::base64url_decode( $urlsafe );
         $this->assertSame( 'ab', $result );
     }
 
@@ -157,5 +157,114 @@ class JwtHelperTest extends WpTestCase {
             $this->assertStringContainsString( '-----BEGIN PUBLIC KEY-----', $result );
             $this->assertStringContainsString( '-----END PUBLIC KEY-----', $result );
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // get_jwks
+    // -------------------------------------------------------------------------
+
+    public function test_get_jwks_returns_cached_value() {
+        $cached = array( 'keys' => array( array( 'kty' => 'RSA' ) ) );
+        Functions\when( 'get_transient' )->justReturn( $cached );
+        Functions\expect( 'wp_remote_get' )->never();
+
+        $result = OIDC_JWT_Helper::get_jwks( 'https://provider.example.com/.well-known/jwks.json' );
+
+        $this->assertSame( $cached, $result );
+    }
+
+    public function test_get_jwks_returns_wp_error_on_http_failure() {
+        $error = new WP_Error( 'http_error', 'Connection failed' );
+        Functions\when( 'get_transient' )->justReturn( false );
+        Functions\when( 'wp_remote_get' )->justReturn( $error );
+        Functions\when( 'is_wp_error' )->alias( function ( $thing ) {
+            return $thing instanceof WP_Error;
+        } );
+
+        $result = OIDC_JWT_Helper::get_jwks( 'https://provider.example.com/.well-known/jwks.json' );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+    }
+
+    public function test_get_jwks_returns_wp_error_on_non_200() {
+        Functions\when( 'get_transient' )->justReturn( false );
+        Functions\when( 'wp_remote_get' )->justReturn( array( 'response' => array( 'code' => 404 ) ) );
+        Functions\when( 'is_wp_error' )->alias( function ( $thing ) {
+            return $thing instanceof WP_Error;
+        } );
+        Functions\when( 'wp_remote_retrieve_response_code' )->justReturn( 404 );
+        Functions\when( '__' )->returnArg();
+
+        $result = OIDC_JWT_Helper::get_jwks( 'https://provider.example.com/.well-known/jwks.json' );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'jwks_fetch_failed', $result->get_error_code() );
+    }
+
+    public function test_get_jwks_returns_wp_error_on_invalid_body() {
+        Functions\when( 'get_transient' )->justReturn( false );
+        Functions\when( 'wp_remote_get' )->justReturn( array() );
+        Functions\when( 'is_wp_error' )->alias( function ( $thing ) {
+            return $thing instanceof WP_Error;
+        } );
+        Functions\when( 'wp_remote_retrieve_response_code' )->justReturn( 200 );
+        Functions\when( 'wp_remote_retrieve_body' )->justReturn( '{"no_keys":true}' );
+        Functions\when( '__' )->returnArg();
+
+        $result = OIDC_JWT_Helper::get_jwks( 'https://provider.example.com/.well-known/jwks.json' );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'jwks_invalid', $result->get_error_code() );
+    }
+
+    public function test_get_jwks_fetches_and_caches_on_success() {
+        $jwks = array( 'keys' => array( array( 'kty' => 'RSA', 'n' => 'abc', 'e' => 'AQAB' ) ) );
+        Functions\when( 'get_transient' )->justReturn( false );
+        Functions\when( 'wp_remote_get' )->justReturn( array() );
+        Functions\when( 'is_wp_error' )->alias( function ( $thing ) {
+            return $thing instanceof WP_Error;
+        } );
+        Functions\when( 'wp_remote_retrieve_response_code' )->justReturn( 200 );
+        Functions\when( 'wp_remote_retrieve_body' )->justReturn( json_encode( $jwks ) );
+        Functions\expect( 'set_transient' )->once();
+
+        $result = OIDC_JWT_Helper::get_jwks( 'https://provider.example.com/.well-known/jwks.json' );
+
+        $this->assertSame( $jwks, $result );
+    }
+
+    // -------------------------------------------------------------------------
+    // verify_signature
+    // -------------------------------------------------------------------------
+
+    public function test_verify_signature_unsupported_alg_returns_wp_error() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'sanitize_text_field' )->returnArg();
+
+        $parts  = array( 'header', 'payload', 'sig' );
+        $header = array( 'alg' => 'HS256' );
+
+        $result = OIDC_JWT_Helper::verify_signature( $parts, $header, 'https://provider.example.com/jwks' );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'unsupported_alg', $result->get_error_code() );
+    }
+
+    public function test_verify_signature_returns_wp_error_when_jwks_fails() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'get_transient' )->justReturn( false );
+        $error = new WP_Error( 'http_error', 'Connection failed' );
+        Functions\when( 'wp_remote_get' )->justReturn( $error );
+        Functions\when( 'is_wp_error' )->alias( function ( $thing ) {
+            return $thing instanceof WP_Error;
+        } );
+
+        $parts  = array( 'header', 'payload', 'sig' );
+        $header = array( 'alg' => 'RS256' );
+
+        $result = OIDC_JWT_Helper::verify_signature( $parts, $header, 'https://provider.example.com/jwks' );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
     }
 }

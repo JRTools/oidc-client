@@ -261,4 +261,57 @@ class ProfileTest extends WpTestCase {
         $profile->initiate_link_login();
         $this->addToAssertionCount( 1 );
     }
+
+    // -------------------------------------------------------------------------
+    // handle_unlink
+    // -------------------------------------------------------------------------
+
+    public function test_handle_unlink_not_logged_in_calls_wp_die() {
+        Functions\when( 'is_user_logged_in' )->justReturn( false );
+        Functions\when( 'esc_html__' )->returnArg();
+        Functions\when( 'wp_die' )->alias( function ( $msg ) {
+            throw new OidcTestException( $msg );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $profile = new OIDC_Profile();
+        $profile->handle_unlink();
+    }
+
+    public function test_handle_unlink_invalid_nonce_calls_wp_die() {
+        Functions\when( 'is_user_logged_in' )->justReturn( true );
+        Functions\when( 'get_current_user_id' )->justReturn( 3 );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( 'wp_verify_nonce' )->justReturn( false );
+        Functions\when( 'esc_html__' )->returnArg();
+        Functions\when( 'wp_die' )->alias( function ( $msg ) {
+            throw new OidcTestException( $msg );
+        } );
+
+        $_POST['oidc_unlink_nonce'] = 'bad-nonce';
+
+        $this->expectException( OidcTestException::class );
+        $profile = new OIDC_Profile();
+        $profile->handle_unlink();
+    }
+
+    public function test_handle_unlink_valid_deletes_meta_and_redirects() {
+        Functions\when( 'is_user_logged_in' )->justReturn( true );
+        Functions\when( 'get_current_user_id' )->justReturn( 5 );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( 'wp_verify_nonce' )->justReturn( true );
+        Functions\expect( 'delete_user_meta' )->once()->with( 5, '_oidc_subject' );
+        Functions\when( 'get_edit_profile_url' )->justReturn( 'https://example.com/wp-admin/profile.php' );
+        Functions\when( 'wp_safe_redirect' )->alias( function ( $url ) {
+            throw new OidcTestException( $url );
+        } );
+
+        $_POST['oidc_unlink_nonce'] = 'valid-nonce';
+
+        $this->expectException( OidcTestException::class );
+        $profile = new OIDC_Profile();
+        $profile->handle_unlink();
+    }
 }
