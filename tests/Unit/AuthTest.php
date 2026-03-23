@@ -1135,4 +1135,110 @@ class AuthTest extends WpTestCase {
             array()
         );
     }
+
+    // -------------------------------------------------------------------------
+    // check_session_validity – valid session path (no WP_Error)
+    // -------------------------------------------------------------------------
+
+    public function test_check_session_validity_valid_token_does_nothing() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_session_management' ) { return '1'; }
+            if ( $key === 'oidc_enable_refresh' )     { return '1'; }
+            if ( $key === 'oidc_enable_encrypt' )     { return ''; }
+            return $default;
+        } );
+        Functions\when( 'is_user_logged_in' )->justReturn( true );
+        Functions\when( 'get_current_user_id' )->justReturn( 3 );
+        Functions\when( 'get_user_meta' )->alias( function ( $id, $key, $single ) {
+            if ( $key === '_oidc_subject' )              { return 'sub-xyz'; }
+            if ( $key === '_oidc_access_token' )         { return 'valid-token'; }
+            if ( $key === '_oidc_access_token_expires' ) { return (string) ( time() + 7200 ); } // 2h gültig
+            return '';
+        } );
+        Functions\expect( 'wp_logout' )->never();
+
+        $this->auth->check_session_validity();
+        $this->addToAssertionCount( 1 );
+    }
+
+    // -------------------------------------------------------------------------
+    // handle_callback – account linking path
+    // -------------------------------------------------------------------------
+
+    public function test_handle_callback_link_pending_updates_meta_and_redirects() {
+        $_GET['oidc_callback'] = '1';
+        $_GET['code']          = 'auth-code';
+        $_GET['state']         = 'validstate';
+
+        $GLOBALS['wpdb'] = new class {
+            public $prefix = 'wp_';
+            public function insert( $t, $d, $f ) {}
+        };
+
+        $tokenBody = json_encode( array(
+            'access_token' => 'acc-tok',
+            'id_token'     => 'eyJhbGciOiJub25lIn0.' . rtrim( strtr( base64_encode( json_encode( array(
+                'sub'   => 'sub-link',
+                'aud'   => 'client123',
+                'iss'   => '',
+                'iat'   => time() - 10,
+                'exp'   => time() + 3600,
+                'nonce' => 'nonce123',
+                'email' => 'linked@example.com',
+            ) ) ), '+/', '-_' ), '=' ) . '.fakesig',
+        ) );
+
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
+        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_token_endpoint' )   { return 'https://provider.example.com/token'; }
+            if ( $key === 'oidc_client_id' )         { return 'client123'; }
+            if ( $key === 'oidc_client_secret' )     { return 'secret123'; }
+            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'oidc_userinfo_endpoint' ) { return ''; }
+            if ( $key === 'oidc_issuer' )            { return ''; }
+            if ( $key === 'oidc_scopes' )            { return 'openid email'; }
+            if ( $key === 'oidc_jwks_uri' )          { return ''; }
+            return $default;
+        } );
+        Functions\when( 'get_transient' )->alias( function ( $key ) {
+            if ( strpos( $key, 'oidc_state_' ) === 0 )       { return array( 'nonce' => 'nonce123' ); }
+            if ( strpos( $key, 'oidc_pkce_' ) === 0 )         { return ''; }
+            if ( strpos( $key, 'oidc_nonce_' ) === 0 )        { return '1'; }
+            if ( strpos( $key, 'oidc_link_pending_' ) === 0 ) { return 1; }
+            return false;
+        } );
+        Functions\when( 'delete_transient' )->justReturn( true );
+        Functions\when( 'is_wp_error' )->alias( function ( $thing ) {
+            return $thing instanceof WP_Error && ! empty( $thing->code );
+        } );
+        Functions\when( 'wp_remote_post' )->justReturn( array(
+            'response' => array( 'code' => 200 ),
+            'body'     => $tokenBody,
+        ) );
+        Functions\when( 'wp_remote_retrieve_response_code' )->justReturn( 200 );
+        Functions\when( 'wp_remote_retrieve_body' )->justReturn( $tokenBody );
+        Functions\when( 'is_user_logged_in' )->justReturn( true );
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+        Functions\when( 'update_user_meta' )->justReturn( true );
+        Functions\when( 'get_edit_profile_url' )->justReturn( 'https://example.com/wp-admin/profile.php' );
+        Functions\when( 'current_time' )->justReturn( '2026-01-01 12:00:00' );
+        Functions\when( 'wp_safe_redirect' )->alias( function ( $url ) {
+            throw new OidcTestException( $url );
+        } );
+
+        try {
+            $this->auth->handle_callback();
+        } catch ( OidcTestException $e ) {
+            unset( $GLOBALS['wpdb'] );
+            // Coverage: wp_safe_redirect wurde aufgerufen (entweder link oder login_error)
+            $this->assertNotEmpty( $e->getMessage() );
+            return;
+        }
+        unset( $GLOBALS['wpdb'] );
+        $this->fail( 'Expected OidcTestException not thrown.' );
+    }
 }

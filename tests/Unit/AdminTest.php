@@ -582,4 +582,51 @@ class AdminTest extends WpTestCase {
         $this->assertStringContainsString( 'administrator', $output );
         $this->assertStringContainsString( 'subscriber', $output );
     }
+
+    // -------------------------------------------------------------------------
+    // render_settings_page
+    // -------------------------------------------------------------------------
+
+    public function test_render_settings_page_no_permission_calls_wp_die() {
+        Functions\when( 'current_user_can' )->justReturn( false );
+        Functions\when( 'esc_html__' )->returnArg();
+        Functions\when( 'wp_die' )->alias( function ( $msg ) {
+            throw new OidcTestException( $msg );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $this->admin->render_settings_page();
+    }
+
+    public function test_render_settings_page_with_permission_outputs_form() {
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'esc_html_e' )->justReturn( null );
+        Functions\when( 'settings_fields' )->justReturn( null );
+        Functions\when( 'do_settings_sections' )->justReturn( null );
+        Functions\when( 'submit_button' )->justReturn( null );
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'home_url' )->justReturn( 'https://example.com' );
+        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
+        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
+        Functions\when( 'rest_url' )->justReturn( 'https://example.com/wp-json/oidc-client/v1/backchannel-logout' );
+        Functions\when( 'esc_html' )->returnArg();
+        Functions\when( 'esc_attr' )->returnArg();
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'sanitize_title' )->returnArg();
+        Functions\when( 'wp_json_encode' )->alias( 'json_encode' );
+        Functions\when( 'wp_roles' )->alias( function () {
+            $obj        = new stdClass();
+            $obj->roles = array();
+            return $obj;
+        } );
+        Functions\when( 'translate_user_role' )->returnArg();
+        Functions\when( 'esc_js' )->returnArg();
+
+        ob_start();
+        $this->admin->render_settings_page();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString( 'wrap', $output );
+        $this->assertStringContainsString( 'form', $output );
+    }
 }

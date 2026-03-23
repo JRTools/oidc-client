@@ -345,4 +345,110 @@ class LogoutTest extends WpTestCase {
         $this->logout->register_backchannel_endpoint();
         $this->addToAssertionCount( 1 );
     }
+
+    // -------------------------------------------------------------------------
+    // validate_logout_token – Issuer- und Audience-Validierung
+    // -------------------------------------------------------------------------
+
+    public function test_backchannel_logout_issuer_mismatch_returns_400() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_issuer' ) { return 'https://expected.example.com'; }
+            return $default;
+        } );
+
+        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
+        $payload = base64_encode( json_encode( array(
+            'iss'    => 'https://wrong-issuer.example.com',
+            'sub'    => 'user123',
+            'iat'    => time(),
+            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
+        ) ) );
+        $jwt = $header . '.' . $payload . '.fakesig';
+
+        $request = new WP_REST_Request();
+        $request->set_param( 'logout_token', $jwt );
+
+        $response = $this->logout->handle_backchannel_logout( $request );
+
+        $this->assertSame( 400, $response->status );
+        $this->assertSame( 'logout_token_iss', $response->data['error'] );
+    }
+
+    public function test_backchannel_logout_audience_mismatch_returns_400() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_issuer' )    { return ''; }
+            if ( $key === 'oidc_client_id' ) { return 'expected-client'; }
+            return $default;
+        } );
+
+        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
+        $payload = base64_encode( json_encode( array(
+            'sub'    => 'user123',
+            'aud'    => 'wrong-client',
+            'iat'    => time(),
+            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
+        ) ) );
+        $jwt = $header . '.' . $payload . '.fakesig';
+
+        $request = new WP_REST_Request();
+        $request->set_param( 'logout_token', $jwt );
+
+        $response = $this->logout->handle_backchannel_logout( $request );
+
+        $this->assertSame( 400, $response->status );
+        $this->assertSame( 'logout_token_aud', $response->data['error'] );
+    }
+
+    public function test_backchannel_logout_audience_array_match_succeeds() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_issuer' )    { return ''; }
+            if ( $key === 'oidc_client_id' ) { return 'my-client'; }
+            return $default;
+        } );
+        Functions\when( 'get_transient' )->justReturn( false );
+        Functions\when( 'set_transient' )->justReturn( true );
+        Functions\when( 'get_users' )->justReturn( array() );
+
+        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
+        $payload = base64_encode( json_encode( array(
+            'sub'    => 'user123',
+            'aud'    => array( 'other-client', 'my-client' ),
+            'iat'    => time(),
+            'jti'    => 'jti-array-test',
+            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
+        ) ) );
+        $jwt = $header . '.' . $payload . '.fakesig';
+
+        $request = new WP_REST_Request();
+        $request->set_param( 'logout_token', $jwt );
+
+        $response = $this->logout->handle_backchannel_logout( $request );
+
+        $this->assertSame( 200, $response->status );
+    }
+
+    public function test_backchannel_logout_future_iat_returns_400() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'get_option' )->justReturn( '' );
+
+        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
+        $payload = base64_encode( json_encode( array(
+            'sub'    => 'user123',
+            'iat'    => time() + 600, // 10 Minuten in der Zukunft
+            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
+        ) ) );
+        $jwt = $header . '.' . $payload . '.fakesig';
+
+        $request = new WP_REST_Request();
+        $request->set_param( 'logout_token', $jwt );
+
+        $response = $this->logout->handle_backchannel_logout( $request );
+
+        $this->assertSame( 400, $response->status );
+        $this->assertSame( 'logout_token_iat', $response->data['error'] );
+    }
 }

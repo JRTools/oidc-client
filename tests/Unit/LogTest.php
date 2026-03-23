@@ -137,4 +137,71 @@ class LogTest extends WpTestCase {
         $log->add_log_page();
         $this->addToAssertionCount( 1 );
     }
+
+    // -------------------------------------------------------------------------
+    // render_log_page – no permission path
+    // -------------------------------------------------------------------------
+
+    public function test_render_log_page_no_permission_calls_wp_die() {
+        Functions\when( 'current_user_can' )->justReturn( false );
+        Functions\when( 'esc_html__' )->returnArg();
+        Functions\when( 'wp_die' )->alias( function ( $msg ) {
+            throw new OidcTestException( $msg );
+        } );
+
+        $log = new OIDC_Log();
+        $this->expectException( OidcTestException::class );
+        $log->render_log_page();
+    }
+
+    public function test_render_log_page_with_permission_outputs_table() {
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( 'esc_html_e' )->justReturn( null );
+        Functions\when( 'esc_html__' )->returnArg();
+        Functions\when( 'esc_html' )->returnArg();
+        Functions\when( 'esc_url' )->returnArg();
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_kses_post' )->returnArg();
+        Functions\when( 'paginate_links' )->justReturn( '' );
+        Functions\when( 'add_query_arg' )->justReturn( '' );
+        Functions\when( 'get_edit_user_link' )->justReturn( '' );
+
+        $item              = new stdClass();
+        $item->timestamp   = '2026-01-01 12:00:00';
+        $item->user_id     = 1;
+        $item->user_login  = 'admin';
+        $item->ip          = '127.0.0.1';
+        $item->success     = 1;
+        $item->message     = 'Login erfolgreich';
+
+        $wpdb            = new FakeWpdb();
+        $wpdb->prefix    = 'wp_';
+        $GLOBALS['wpdb'] = new class {
+            public $prefix = 'wp_';
+            public $users  = 'wp_users';
+            public function prepare( $sql, ...$args ) { return $sql; }
+            public function get_results( $sql ) {
+                $item             = new stdClass();
+                $item->timestamp  = '2026-01-01 12:00:00';
+                $item->user_id    = 1;
+                $item->user_login = 'admin';
+                $item->ip         = '127.0.0.1';
+                $item->success    = 1;
+                $item->message    = 'Login erfolgreich';
+                return array( $item );
+            }
+            public function get_var( $sql ) { return 1; }
+        };
+
+        ob_start();
+        ( new OIDC_Log() )->render_log_page();
+        $output = ob_get_clean();
+
+        unset( $GLOBALS['wpdb'] );
+
+        $this->assertStringContainsString( 'wrap', $output );
+        $this->assertStringContainsString( 'oidc-log-table', $output );
+    }
 }
