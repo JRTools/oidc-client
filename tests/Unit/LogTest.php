@@ -14,18 +14,6 @@ if ( ! class_exists( 'OIDC_Log' ) ) {
     require_once __DIR__ . '/../../includes/class-oidc-log.php';
 }
 
-/**
- * Minimal-Stub für $wpdb der insert() als echte Methode anbietet.
- */
-class FakeWpdb {
-    public $prefix   = 'wp_';
-    public $inserted = array();
-
-    public function insert( $table, $data, $_formats ) {
-        $this->inserted = array( 'table' => $table, 'data' => $data );
-    }
-}
-
 class LogTest extends WpTestCase {
 
     protected function setUp(): void {

@@ -520,7 +520,7 @@ class OIDC_Auth {
         // F7: Erfolgreichen Login loggen
         OIDC_Log::write( $user->ID, true, __( 'OIDC Login erfolgreich.', 'oidc-client' ) );
 
-        $redirect_to = apply_filters( 'login_redirect', admin_url(), '', $user ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core-Filter.
+        $redirect_to = apply_filters( 'login_redirect', admin_url(), '', $user ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core-Filter. NOSONAR -- apply_filters() accepts variadic args; extra args are passed to filter callbacks.
         wp_safe_redirect( $redirect_to );
         exit;
     }

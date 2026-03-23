@@ -52,17 +52,6 @@ if ( ! class_exists( 'OIDC_Logout' ) ) {
     require_once __DIR__ . '/../../includes/class-oidc-logout.php';
 }
 
-if ( ! class_exists( 'FakeWpdb' ) ) {
-    class FakeWpdb {
-        public $prefix   = 'wp_';
-        public $inserted = array();
-
-        public function insert( $table, $data, $_formats ) {
-            $this->inserted = array( 'table' => $table, 'data' => $data );
-        }
-    }
-}
-
 class LogoutTest extends WpTestCase {
 
     /** @var OIDC_Logout */

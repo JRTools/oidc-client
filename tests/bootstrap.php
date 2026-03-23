@@ -108,6 +108,39 @@ if ( ! function_exists( 'register_activation_hook' ) ) {
     function register_activation_hook( $file, $callback ) {}
 }
 
+// Shared Test-Hilfsstubs (in allen Unit-Tests verfügbar)
+if ( ! class_exists( 'OidcTestException' ) ) {
+    class OidcTestException extends RuntimeException {}
+}
+
+if ( ! class_exists( 'FakeWpdb' ) ) {
+    class FakeWpdb {
+        public $prefix   = 'wp_';
+        public $users    = 'wp_users';
+        public $inserted = array();
+
+        public function insert( $table, $data, $_formats ) {
+            $this->inserted = array( 'table' => $table, 'data' => $data );
+        }
+
+        public function prepare( $sql, ...$args ) {
+            return $sql;
+        }
+
+        public function get_results( $sql ) {
+            return array();
+        }
+
+        public function get_var( $sql ) {
+            return 0;
+        }
+
+        public function query( $sql ) {
+            return true;
+        }
+    }
+}
+
 // Plugin-Klassen laden
 require_once __DIR__ . '/../includes/class-oidc-jwt-helper.php';
 require_once __DIR__ . '/../includes/class-oidc-tokens.php';
