@@ -93,6 +93,26 @@ if ( ! class_exists( 'WP_User' ) ) {
     }
 }
 
+// WP_Post Stub
+if ( ! class_exists( 'WP_Post' ) ) {
+    class WP_Post {
+        public $post_author = 0;
+        public function __construct( $author = 0 ) {
+            $this->post_author = $author;
+        }
+    }
+}
+
+// WP_Comment Stub
+if ( ! class_exists( 'WP_Comment' ) ) {
+    class WP_Comment {
+        public $comment_author_email = '';
+        public function __construct( $email = '' ) {
+            $this->comment_author_email = $email;
+        }
+    }
+}
+
 // Plugin-Klassen laden (ohne ABSPATH-Check, da wir ihn oben definiert haben)
 require_once __DIR__ . '/../includes/class-oidc-jwt-helper.php';
 require_once __DIR__ . '/../includes/class-oidc-tokens.php';

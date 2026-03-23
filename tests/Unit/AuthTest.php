@@ -141,4 +141,149 @@ class AuthTest extends WpTestCase {
         $c2       = $this->auth->public_generate_code_challenge( $verifier );
         $this->assertSame( $c1, $c2 );
     }
+
+    // -------------------------------------------------------------------------
+    // filter_avatar_url
+    // -------------------------------------------------------------------------
+
+    public function test_filter_avatar_url_numeric_id_with_avatar() {
+        $user     = new WP_User();
+        $user->ID = 5;
+        Functions\when( 'get_user_by' )->justReturn( $user );
+        Functions\when( 'get_user_meta' )->justReturn( 'https://example.com/avatar.jpg' );
+        Functions\when( 'esc_url' )->returnArg();
+
+        $result = $this->auth->filter_avatar_url( 'fallback.jpg', 5, array() );
+        $this->assertSame( 'https://example.com/avatar.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_numeric_id_no_avatar_returns_original() {
+        $user     = new WP_User();
+        $user->ID = 5;
+        Functions\when( 'get_user_by' )->justReturn( $user );
+        Functions\when( 'get_user_meta' )->justReturn( '' );
+
+        $result = $this->auth->filter_avatar_url( 'fallback.jpg', 5, array() );
+        $this->assertSame( 'fallback.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_string_email_with_avatar() {
+        $user     = new WP_User();
+        $user->ID = 7;
+        Functions\when( 'get_user_by' )->justReturn( $user );
+        Functions\when( 'get_user_meta' )->justReturn( 'https://cdn.example.com/pic.png' );
+        Functions\when( 'esc_url' )->returnArg();
+
+        $result = $this->auth->filter_avatar_url( 'default.jpg', 'user@example.com', array() );
+        $this->assertSame( 'https://cdn.example.com/pic.png', $result );
+    }
+
+    public function test_filter_avatar_url_wp_user_object_with_avatar() {
+        $user     = new WP_User();
+        $user->ID = 9;
+        Functions\when( 'get_user_meta' )->justReturn( 'https://example.com/oidc-avatar.jpg' );
+        Functions\when( 'esc_url' )->returnArg();
+
+        $result = $this->auth->filter_avatar_url( 'fallback.jpg', $user, array() );
+        $this->assertSame( 'https://example.com/oidc-avatar.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_wp_user_no_avatar_returns_original() {
+        $user     = new WP_User();
+        $user->ID = 9;
+        Functions\when( 'get_user_meta' )->justReturn( '' );
+
+        $result = $this->auth->filter_avatar_url( 'original.jpg', $user, array() );
+        $this->assertSame( 'original.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_wp_post_with_avatar() {
+        $post              = new WP_Post( 3 );
+        $user              = new WP_User();
+        $user->ID          = 3;
+        Functions\when( 'get_user_by' )->justReturn( $user );
+        Functions\when( 'get_user_meta' )->justReturn( 'https://example.com/post-author.jpg' );
+        Functions\when( 'esc_url' )->returnArg();
+
+        $result = $this->auth->filter_avatar_url( 'fallback.jpg', $post, array() );
+        $this->assertSame( 'https://example.com/post-author.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_wp_comment_with_avatar() {
+        $comment                       = new WP_Comment( 'commenter@example.com' );
+        $user                          = new WP_User();
+        $user->ID                      = 11;
+        Functions\when( 'get_user_by' )->justReturn( $user );
+        Functions\when( 'get_user_meta' )->justReturn( 'https://example.com/commenter.jpg' );
+        Functions\when( 'esc_url' )->returnArg();
+
+        $result = $this->auth->filter_avatar_url( 'fallback.jpg', $comment, array() );
+        $this->assertSame( 'https://example.com/commenter.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_unknown_type_returns_original() {
+        $result = $this->auth->filter_avatar_url( 'original.jpg', new stdClass(), array() );
+        $this->assertSame( 'original.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_user_not_found_returns_original() {
+        Functions\when( 'get_user_by' )->justReturn( false );
+
+        $result = $this->auth->filter_avatar_url( 'original.jpg', 99, array() );
+        $this->assertSame( 'original.jpg', $result );
+    }
+
+    // -------------------------------------------------------------------------
+    // check_session_validity – Early Returns
+    // -------------------------------------------------------------------------
+
+    public function test_check_session_validity_disabled_returns_early() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            return $key === 'oidc_session_management' ? '' : $default;
+        } );
+        Functions\expect( 'is_user_logged_in' )->never();
+
+        $this->auth->check_session_validity();
+        $this->assertTrue( true );
+    }
+
+    public function test_check_session_validity_refresh_disabled_returns_early() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_session_management' ) return '1';
+            if ( $key === 'oidc_enable_refresh' ) return '';
+            return $default;
+        } );
+        Functions\expect( 'is_user_logged_in' )->never();
+
+        $this->auth->check_session_validity();
+        $this->assertTrue( true );
+    }
+
+    public function test_check_session_validity_not_logged_in_returns_early() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_session_management' ) return '1';
+            if ( $key === 'oidc_enable_refresh' ) return '1';
+            return $default;
+        } );
+        Functions\when( 'is_user_logged_in' )->justReturn( false );
+        Functions\expect( 'get_current_user_id' )->never();
+
+        $this->auth->check_session_validity();
+        $this->assertTrue( true );
+    }
+
+    public function test_check_session_validity_no_oidc_subject_returns_early() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_session_management' ) return '1';
+            if ( $key === 'oidc_enable_refresh' ) return '1';
+            return $default;
+        } );
+        Functions\when( 'is_user_logged_in' )->justReturn( true );
+        Functions\when( 'get_current_user_id' )->justReturn( 5 );
+        Functions\when( 'get_user_meta' )->justReturn( '' ); // kein _oidc_subject
+        Functions\expect( 'wp_logout' )->never();
+
+        $this->auth->check_session_validity();
+        $this->assertTrue( true );
+    }
 }
