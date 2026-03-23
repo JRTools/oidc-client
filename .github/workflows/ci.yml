@@ -23,7 +23,7 @@ jobs:
         with:
           build-dir: './'
           exclude-directories: 'vendor,tests,.github,dist,bin'
-          exclude-files: '.gitignore,.distignore,composer.json,composer.lock,phpunit.xml,phpunit.xml.dist,phpstan.neon,infection.json5,sonar-project.properties,qodana.yaml,Makefile'
+          exclude-files: '.gitignore,.distignore,.phpcs.xml,composer.json,composer.lock,phpunit.xml,phpunit.xml.dist,phpstan.neon,infection.json5,sonar-project.properties,qodana.yaml,Makefile'
 
   test:
     name: PHP ${{ matrix.php }}
