@@ -6,20 +6,11 @@
  * WP_Error wird als Stub bereitgestellt (tests/bootstrap.php).
  */
 
+require_once __DIR__ . '/WpTestCase.php';
+
 use Brain\Monkey;
-use PHPUnit\Framework\TestCase;
 
-class JwtHelperTest extends TestCase {
-
-    protected function setUp(): void {
-        parent::setUp();
-        Monkey\setUp();
-    }
-
-    protected function tearDown(): void {
-        Monkey\tearDown();
-        parent::tearDown();
-    }
+class JwtHelperTest extends WpTestCase {
 
     // -------------------------------------------------------------------------
     // base64url_decode

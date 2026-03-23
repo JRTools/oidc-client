@@ -1,0 +1,18 @@
+includes:
+    - vendor/szepeviktor/phpstan-wordpress/extension.neon
+
+parameters:
+    level: 5
+    paths:
+        - includes
+        - oidc-client.php
+    bootstrapFiles:
+        - tests/phpstan-bootstrap.php
+    ignoreErrors:
+        # WordPress erlaubt null als Callback für add_settings_section (kein Abschnitts-Header)
+        - identifier: argument.type
+          path: includes/class-oidc-admin.php
+          message: '~Parameter .* \$callback of function add_settings_section~'
+    excludePaths:
+        - vendor
+        - tests

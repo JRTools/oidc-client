@@ -1,0 +1,11 @@
+{
+    "timeout": 10,
+    "source": {
+        "directories": ["includes"]
+    },
+    "logs": {
+        "text": "infection.log"
+    },
+    "minMsi": 70,
+    "minCoveredMsi": 80
+}

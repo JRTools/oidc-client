@@ -7,21 +7,11 @@
  * mehrfach mit unterschiedlichen Argumenten aufgerufen wird.
  */
 
-use Brain\Monkey;
+require_once __DIR__ . '/WpTestCase.php';
+
 use Brain\Monkey\Functions;
-use PHPUnit\Framework\TestCase;
 
-class RolesTest extends TestCase {
-
-    protected function setUp(): void {
-        parent::setUp();
-        Monkey\setUp();
-    }
-
-    protected function tearDown(): void {
-        Monkey\tearDown();
-        parent::tearDown();
-    }
+class RolesTest extends WpTestCase {
 
     /** Hilfsmethode: get_option-Stub mit Map registrieren. */
     private function stub_get_option( array $map ) {

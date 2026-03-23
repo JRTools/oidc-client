@@ -17,17 +17,21 @@
         "brain/monkey": "^2.6",
         "squizlabs/php_codesniffer": "^3.9",
         "wp-coding-standards/wpcs": "^3.1",
-        "dealerdirect/phpcodesniffer-composer-installer": "^1.0"
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "phpstan/phpstan": "^2.0",
+        "szepeviktor/phpstan-wordpress": "^2.0",
+        "infection/infection": "^0.29"
     },
-    "config": {
-        "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
-        }
-    },
-    "autoload-dev": {
+    "autoload": {
         "classmap": [
             "includes/"
         ]
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "infection/extension-installer": true
+        }
     },
     "scripts": {
         "test": "phpunit",

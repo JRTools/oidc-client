@@ -2,39 +2,193 @@ name: CI
 
 on:
   push:
-    branches: [ "**" ]
+    branches: [main]
   pull_request:
-    branches: [ "**" ]
+    branches: [main]
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
-  test:
-    name: PHP ${{ matrix.php }} – Tests & Lint
+  plugin-check:
+    name: WordPress Plugin Check
     runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: WordPress Plugin Check ausführen
+        uses: wordpress/plugin-check-action@6f5a57e173c065a394b78688f75df543e4011902 # v1
+        with:
+          build-dir: './'
+          exclude-directories: 'vendor,tests,.github,dist'
+
+  test:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
 
     strategy:
       fail-fast: false
       matrix:
-        php: [ "7.4", "8.1", "8.3" ]
+        php: ['7.4', '8.1', '8.2', '8.3', '8.4']
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - name: PHP ${{ matrix.php }} einrichten
-        uses: shivammathur/setup-php@v2
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
         with:
           php-version: ${{ matrix.php }}
           extensions: openssl, mbstring, json
           coverage: none
+          tools: composer:v2
 
-      - name: Composer-Abhängigkeiten installieren
-        run: composer update --no-interaction --prefer-dist
+      - name: Composer-Cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e5684 # v4
+        with:
+          path: vendor
+          key: composer-${{ matrix.php }}-${{ hashFiles('composer.json') }}
+          restore-keys: composer-${{ matrix.php }}-
 
-      - name: Code-Style prüfen (PHPCS)
-        run: vendor/bin/phpcs
+      - name: Abhängigkeiten installieren
+        run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Unit-Tests ausführen (PHPUnit)
-        run: vendor/bin/phpunit
+      - name: Tests ausführen
+        run: ./vendor/bin/phpunit --no-progress --log-junit test-results.xml
+
+      - name: Testergebnisse veröffentlichen
+        uses: mikepenz/action-junit-report@49b2ca06f62aa7ef83ae6769a2179271e160d8e4 # v6
+        if: always()
+        with:
+          report_paths: test-results.xml
+          check_name: PHPUnit (PHP ${{ matrix.php }})
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: PHP 8.2 mit Xdebug einrichten
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        with:
+          php-version: '8.2'
+          extensions: openssl, mbstring, json
+          coverage: xdebug
+          tools: composer:v2
+
+      - name: Composer-Cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e5684 # v4
+        with:
+          path: vendor
+          key: composer-8.2-${{ hashFiles('composer.json') }}
+          restore-keys: composer-8.2-
+
+      - name: Abhängigkeiten installieren
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Tests mit Coverage ausführen
+        run: ./vendor/bin/phpunit --no-progress --coverage-clover coverage.xml
+
+      - name: Coverage zu Codecov hochladen
+        uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: false
+
+  phpstan:
+    name: PHPStan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: PHP 8.2 einrichten
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        with:
+          php-version: '8.2'
+          extensions: openssl, mbstring, json
+          coverage: none
+          tools: composer:v2
+
+      - name: Composer-Cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e5684 # v4
+        with:
+          path: vendor
+          key: composer-8.2-${{ hashFiles('composer.json') }}
+          restore-keys: composer-8.2-
+
+      - name: Abhängigkeiten installieren
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Sicherheits-Audit
+        run: composer audit --no-interaction
+
+      - name: PHPStan ausführen
+        run: ./vendor/bin/phpstan analyse --no-progress --memory-limit=512M
+
+  phpcs:
+    name: PHPCS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: PHP 8.2 einrichten
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        with:
+          php-version: '8.2'
+          extensions: openssl, mbstring, json
+          coverage: none
+          tools: composer:v2
+
+      - name: Composer-Cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e5684 # v4
+        with:
+          path: vendor
+          key: composer-8.2-${{ hashFiles('composer.json') }}
+          restore-keys: composer-8.2-
+
+      - name: Abhängigkeiten installieren
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: PHPCS ausführen
+        run: ./vendor/bin/phpcs
+
+  infection:
+    name: Mutation Testing
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: PHP 8.2 mit Xdebug einrichten
+        uses: shivammathur/setup-php@accd6127cb78bee3e8082180cb391013d204ef9f # v2
+        with:
+          php-version: '8.2'
+          extensions: openssl, mbstring, json
+          coverage: xdebug
+          tools: composer:v2
+
+      - name: Composer-Cache
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e5684 # v4
+        with:
+          path: vendor
+          key: composer-8.2-${{ hashFiles('composer.json') }}
+          restore-keys: composer-8.2-
+
+      - name: Abhängigkeiten installieren
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Infection ausführen
+        run: ./vendor/bin/infection --no-progress --min-msi=70 --min-covered-msi=80

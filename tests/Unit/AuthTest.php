@@ -9,19 +9,15 @@
  * add_action/add_filter, bevor wir instanziieren.
  */
 
-use Brain\Monkey;
 use Brain\Monkey\Functions;
-use PHPUnit\Framework\TestCase;
+
+require_once __DIR__ . '/WpTestCase.php';
 
 // OIDC_Auth benötigt OIDC_Log, OIDC_Tokens – Stubs bereitstellen
 if ( ! class_exists( 'OIDC_Log' ) ) {
     class OIDC_Log {
         public static function write( $user_id, $success, $message ) {}
     }
-}
-if ( ! class_exists( 'OIDC_Tokens' ) ) {
-    // OIDC_Tokens ist in bootstrap.php bereits geladen – dieser Guard ist nur
-    // für den Fall, dass der Test isoliert ausgeführt wird.
 }
 
 // Wir laden OIDC_Auth erst hier, da es Konstanten und Stubs braucht
@@ -55,14 +51,13 @@ class TestableOIDCAuth extends OIDC_Auth {
     }
 }
 
-class AuthTest extends TestCase {
+class AuthTest extends WpTestCase {
 
     /** @var TestableOIDCAuth */
     private $auth;
 
     protected function setUp(): void {
         parent::setUp();
-        Monkey\setUp();
 
         // Hooks im Konstruktor abfangen
         Functions\when( 'add_action' )->justReturn( null );
@@ -70,11 +65,6 @@ class AuthTest extends TestCase {
         Functions\when( 'get_option' )->justReturn( '' );
 
         $this->auth = new TestableOIDCAuth();
-    }
-
-    protected function tearDown(): void {
-        Monkey\tearDown();
-        parent::tearDown();
     }
 
     // -------------------------------------------------------------------------

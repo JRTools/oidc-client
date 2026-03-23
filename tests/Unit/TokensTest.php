@@ -6,20 +6,14 @@
  * Brain\Monkey mockt get_option, get_user_meta, update_user_meta.
  */
 
-use Brain\Monkey;
-use Brain\Monkey\Functions;
-use PHPUnit\Framework\TestCase;
+require_once __DIR__ . '/WpTestCase.php';
 
-class TokensTest extends TestCase {
+use Brain\Monkey\Functions;
+
+class TokensTest extends WpTestCase {
 
     protected function setUp(): void {
         parent::setUp();
-        Monkey\setUp();
-    }
-
-    protected function tearDown(): void {
-        Monkey\tearDown();
-        parent::tearDown();
     }
 
     // Hilfsmethode: private Methode via Reflexion aufrufen
