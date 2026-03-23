@@ -56,10 +56,10 @@ jobs:
           restore-keys: composer-${{ matrix.php }}-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=php+
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Tests ausführen
-        run: ./vendor/bin/phpunit --no-progress --log-junit test-results.xml
+        run: ./vendor/bin/phpunit --log-junit test-results.xml
 
       - name: Testergebnisse veröffentlichen
         uses: mikepenz/action-junit-report@49b2ca06f62aa7ef83ae6769a2179271e160d8e4 # v6
@@ -92,10 +92,10 @@ jobs:
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=php+
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Tests mit Coverage ausführen
-        run: ./vendor/bin/phpunit --no-progress --coverage-clover coverage.xml
+        run: ./vendor/bin/phpunit --coverage-clover coverage.xml
 
       - name: Coverage zu Codecov hochladen
         uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5
@@ -128,7 +128,7 @@ jobs:
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=php+
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Sicherheits-Audit
         run: composer audit --no-interaction
@@ -160,7 +160,7 @@ jobs:
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=php+
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: PHPCS ausführen
         run: ./vendor/bin/phpcs
@@ -189,7 +189,7 @@ jobs:
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=php+
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Infection ausführen
         run: ./vendor/bin/infection --no-progress --min-msi=70 --min-covered-msi=80
