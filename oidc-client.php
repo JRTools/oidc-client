@@ -10,7 +10,7 @@
  * License URI:  https://www.gnu.org/licenses/gpl-2.0.html
  *
  * Copyright (C) 2026 Johannes Rösch
- * Requires PHP: 7.4
+ * Requires PHP: 8.1
  * Requires at least: 5.9
  * Text Domain:  oidc-client
  * Domain Path:  /languages

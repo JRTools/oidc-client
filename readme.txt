@@ -3,7 +3,7 @@ Contributors: johannesroesch
 Tags: openid-connect, oauth2, sso, authentication, login
 Requires at least: 5.9
 Tested up to: 6.9
-Requires PHP: 7.4
+Requires PHP: 8.1
 Stable tag: 1.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -23,7 +23,7 @@ Works out of the box with **Keycloak**, **Microsoft Entra ID (Azure AD)**, **Goo
 * **JWT signature verification** – RS256 validation via JWKS endpoint with 1-hour cache and automatic key rotation
 * **Token encryption** (AES-256-CBC) – optionally encrypts access, refresh, and ID tokens at rest
 * **Session management** – ties WordPress sessions to token expiry; silently refreshes via refresh token; terminates session on failure
-* **Frontchannel logout** and **Backchannel logout** (REST endpoint `POST /wp-json/oidc/v1/backchannel-logout`)
+* **Frontchannel logout** and **Backchannel logout** (REST endpoint `POST /wp-json/oidc-client/v1/backchannel-logout`)
 * **Account linking** – link and unlink existing WordPress accounts to an OIDC provider from the user profile
 * **Role mapping** – map claim values to WordPress roles via simple line-based configuration (`claim-value=role`)
 * **Lock email address** – prevents OIDC-linked users from changing their email in WordPress
@@ -37,7 +37,7 @@ Works out of the box with **Keycloak**, **Microsoft Entra ID (Azure AD)**, **Goo
 
 = Requirements =
 
-* PHP 7.4 or higher with the `openssl` extension
+* PHP 8.1 or higher with the `openssl` extension
 * WordPress 5.9 or higher
 * An OIDC provider that supports Authorization Code Flow
 
@@ -95,7 +95,7 @@ In **Settings → OIDC Client → Rollen-Mapping**, set the claim name (e.g. `ro
 
 = How do I set up backchannel logout? =
 
-Register `https://your-site.com/wp-json/oidc/v1/backchannel-logout` as the backchannel logout URI at your provider.
+Register `https://your-site.com/wp-json/oidc-client/v1/backchannel-logout` as the backchannel logout URI at your provider.
 
 == Screenshots ==
 
