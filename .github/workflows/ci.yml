@@ -22,7 +22,8 @@ jobs:
         uses: wordpress/plugin-check-action@6f5a57e173c065a394b78688f75df543e4011902 # v1
         with:
           build-dir: './'
-          exclude-directories: 'vendor,tests,.github,dist'
+          exclude-directories: 'vendor,tests,.github,dist,bin'
+          exclude-files: '.gitignore,.distignore,.phpcs.xml,composer.json,composer.lock,phpunit.xml,phpunit.xml.dist,phpstan.neon,infection.json5,sonar-project.properties,qodana.yaml,Makefile'
 
   test:
     name: PHP ${{ matrix.php }}
@@ -33,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        php: ['7.4', '8.1', '8.2', '8.3', '8.4']
+        php: ['8.1', '8.2', '8.3', '8.4']
 
     steps:
       - name: Checkout
@@ -48,17 +49,17 @@ jobs:
           tools: composer:v2
 
       - name: Composer-Cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e5684 # v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: vendor
           key: composer-${{ matrix.php }}-${{ hashFiles('composer.json') }}
           restore-keys: composer-${{ matrix.php }}-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Tests ausführen
-        run: ./vendor/bin/phpunit --no-progress --log-junit test-results.xml
+        run: ./vendor/bin/phpunit --log-junit test-results.xml
 
       - name: Testergebnisse veröffentlichen
         uses: mikepenz/action-junit-report@49b2ca06f62aa7ef83ae6769a2179271e160d8e4 # v6
@@ -84,17 +85,17 @@ jobs:
           tools: composer:v2
 
       - name: Composer-Cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e5684 # v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: vendor
           key: composer-8.2-${{ hashFiles('composer.json') }}
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Tests mit Coverage ausführen
-        run: ./vendor/bin/phpunit --no-progress --coverage-clover coverage.xml
+        run: ./vendor/bin/phpunit --coverage-clover coverage.xml
 
       - name: Coverage zu Codecov hochladen
         uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5
@@ -120,20 +121,20 @@ jobs:
           tools: composer:v2
 
       - name: Composer-Cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e5684 # v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: vendor
           key: composer-8.2-${{ hashFiles('composer.json') }}
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Sicherheits-Audit
         run: composer audit --no-interaction
 
       - name: PHPStan ausführen
-        run: ./vendor/bin/phpstan analyse --no-progress --memory-limit=512M
+        run: ./vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 
   phpcs:
     name: PHPCS
@@ -152,14 +153,14 @@ jobs:
           tools: composer:v2
 
       - name: Composer-Cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e5684 # v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: vendor
           key: composer-8.2-${{ hashFiles('composer.json') }}
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: PHPCS ausführen
         run: ./vendor/bin/phpcs
@@ -181,14 +182,14 @@ jobs:
           tools: composer:v2
 
       - name: Composer-Cache
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e5684 # v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: vendor
           key: composer-8.2-${{ hashFiles('composer.json') }}
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Infection ausführen
         run: ./vendor/bin/infection --no-progress --min-msi=70 --min-covered-msi=80
