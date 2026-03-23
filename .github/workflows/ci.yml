@@ -22,7 +22,8 @@ jobs:
         uses: wordpress/plugin-check-action@6f5a57e173c065a394b78688f75df543e4011902 # v1
         with:
           build-dir: './'
-          exclude-directories: 'vendor,tests,.github,dist'
+          exclude-directories: 'vendor,tests,.github,dist,bin'
+          exclude-files: '.gitignore,composer.json,composer.lock,phpunit.xml,phpstan.neon,infection.json5,sonar-project.properties,qodana.yaml,Makefile'
 
   test:
     name: PHP ${{ matrix.php }}
@@ -55,7 +56,7 @@ jobs:
           restore-keys: composer-${{ matrix.php }}-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=php+
 
       - name: Tests ausführen
         run: ./vendor/bin/phpunit --no-progress --log-junit test-results.xml
@@ -91,7 +92,7 @@ jobs:
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=php+
 
       - name: Tests mit Coverage ausführen
         run: ./vendor/bin/phpunit --no-progress --coverage-clover coverage.xml
@@ -127,13 +128,13 @@ jobs:
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=php+
 
       - name: Sicherheits-Audit
         run: composer audit --no-interaction
 
       - name: PHPStan ausführen
-        run: ./vendor/bin/phpstan analyse --no-progress --memory-limit=512M
+        run: ./vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 
   phpcs:
     name: PHPCS
@@ -159,7 +160,7 @@ jobs:
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=php+
 
       - name: PHPCS ausführen
         run: ./vendor/bin/phpcs
@@ -188,7 +189,7 @@ jobs:
           restore-keys: composer-8.2-
 
       - name: Abhängigkeiten installieren
-        run: composer install --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-req=php+
 
       - name: Infection ausführen
         run: ./vendor/bin/infection --no-progress --min-msi=70 --min-covered-msi=80
