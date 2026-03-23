@@ -95,7 +95,7 @@ jobs:
         run: composer install --no-interaction --prefer-dist --no-progress --ignore-platform-reqs
 
       - name: Tests mit Coverage ausführen
-        run: ./vendor/bin/phpunit --coverage-clover coverage.xml
+        run: ./vendor/bin/phpunit -c phpunit.xml.dist --coverage-clover coverage.xml
 
       - name: Coverage zu Codecov hochladen
         uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5
