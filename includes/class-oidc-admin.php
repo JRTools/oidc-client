@@ -205,19 +205,25 @@ class OIDC_Admin {
         $this->add_field( 'oidc_end_session_endpoint', __( 'End-Session Endpoint', 'oidc-client' ), array( $this, 'field_url' ), 'oidc_section_advanced', array( 'option' => 'oidc_end_session_endpoint' ) );
 
         foreach ( array(
-            array( 'oidc_enable_refresh',     __( 'Token-Refresh', 'oidc-client' ),                  __( 'Refresh-Token und Access-Token nach Login speichern und automatisch erneuern.', 'oidc-client' ) ),
-            array( 'oidc_sync_avatar',        __( 'Profilbild synchronisieren', 'oidc-client' ),      __( 'Profilbild (picture-Claim) vom Provider übernehmen und als WordPress-Avatar anzeigen.', 'oidc-client' ) ),
-            array( 'oidc_hide_wp_login',      __( 'WP-Login-Formular ausblenden', 'oidc-client' ),    __( 'Standard-WordPress-Loginformular ausblenden. Mit ?showlogin=1 weiterhin erreichbar.', 'oidc-client' ) ),
-            array( 'oidc_auto_login',         __( 'Auto-Login', 'oidc-client' ),                      __( 'Automatisch zum OIDC-Provider weiterleiten wenn die Login-Seite aufgerufen wird.', 'oidc-client' ) ),
-            array( 'oidc_token_encryption',   __( 'Token-Verschlüsselung', 'oidc-client' ),           __( 'Access-, Refresh- und ID-Token verschlüsselt in der Datenbank speichern (AES-256-CBC). Erfordert PHP OpenSSL.', 'oidc-client' ) ),
-            array( 'oidc_lock_email',         __( 'E-Mail sperren', 'oidc-client' ),                  __( 'OIDC-Nutzer können ihre E-Mail-Adresse nicht selbst ändern.', 'oidc-client' ) ),
-            array( 'oidc_lock_password',      __( 'Passwort sperren', 'oidc-client' ),                __( 'OIDC-Nutzer können ihr Passwort nicht selbst ändern.', 'oidc-client' ) ),
-            array( 'oidc_session_management', __( 'Session-Management', 'oidc-client' ),              __( 'Session an Token-Ablauf binden: Bei jedem Request Token prüfen, Refresh versuchen, sonst ausloggen. Erfordert Token-Refresh.', 'oidc-client' ) ),
+            array( 'oidc_enable_refresh', __( 'Token-Refresh', 'oidc-client' ), __( 'Refresh-Token und Access-Token nach Login speichern und automatisch erneuern.', 'oidc-client' ) ),
+            array( 'oidc_sync_avatar', __( 'Profilbild synchronisieren', 'oidc-client' ), __( 'Profilbild (picture-Claim) vom Provider übernehmen und als WordPress-Avatar anzeigen.', 'oidc-client' ) ),
+            array( 'oidc_hide_wp_login', __( 'WP-Login-Formular ausblenden', 'oidc-client' ), __( 'Standard-WordPress-Loginformular ausblenden. Mit ?showlogin=1 weiterhin erreichbar.', 'oidc-client' ) ),
+            array( 'oidc_auto_login', __( 'Auto-Login', 'oidc-client' ), __( 'Automatisch zum OIDC-Provider weiterleiten wenn die Login-Seite aufgerufen wird.', 'oidc-client' ) ),
+            array( 'oidc_token_encryption', __( 'Token-Verschlüsselung', 'oidc-client' ), __( 'Access-, Refresh- und ID-Token verschlüsselt in der Datenbank speichern (AES-256-CBC). Erfordert PHP OpenSSL.', 'oidc-client' ) ),
+            array( 'oidc_lock_email', __( 'E-Mail sperren', 'oidc-client' ), __( 'OIDC-Nutzer können ihre E-Mail-Adresse nicht selbst ändern.', 'oidc-client' ) ),
+            array( 'oidc_lock_password', __( 'Passwort sperren', 'oidc-client' ), __( 'OIDC-Nutzer können ihr Passwort nicht selbst ändern.', 'oidc-client' ) ),
+            array( 'oidc_session_management', __( 'Session-Management', 'oidc-client' ), __( 'Session an Token-Ablauf binden: Bei jedem Request Token prüfen, Refresh versuchen, sonst ausloggen. Erfordert Token-Refresh.', 'oidc-client' ) ),
         ) as list( $option, $label, $desc ) ) {
-            $this->add_field( $option, $label, array( $this, 'field_checkbox' ), 'oidc_section_advanced', array( 'option' => $option, 'description' => $desc ) );
+            $this->add_field( $option, $label, array( $this, 'field_checkbox' ), 'oidc_section_advanced', array(
+			'option' => $option,
+			'description' => $desc,
+			) );
         }
 
-        $this->add_field( 'oidc_active_claim', __( 'Active-Claim', 'oidc-client' ), array( $this, 'field_text' ), 'oidc_section_advanced', array( 'option' => 'oidc_active_claim', 'description' => __( 'Claim-Name der Aktivierung (z. B. „active" oder „email_verified"). Login wird verweigert wenn false/0.', 'oidc-client' ) ) );
+        $this->add_field( 'oidc_active_claim', __( 'Active-Claim', 'oidc-client' ), array( $this, 'field_text' ), 'oidc_section_advanced', array(
+		'option' => 'oidc_active_claim',
+		'description' => __( 'Claim-Name der Aktivierung (z. B. „active" oder „email_verified"). Login wird verweigert wenn false/0.', 'oidc-client' ),
+		) );
         $this->add_field( 'oidc_button_icon_url', __( 'Button-Icon URL', 'oidc-client' ), array( $this, 'field_url' ), 'oidc_section_advanced', array( 'option' => 'oidc_button_icon_url' ) );
         $this->add_field( 'oidc_remember_me', __( 'Angemeldet bleiben', 'oidc-client' ), array( $this, 'field_remember_me' ), 'oidc_section_advanced' );
 
