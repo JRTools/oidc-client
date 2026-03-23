@@ -25,7 +25,13 @@ class AdminTest extends WpTestCase {
         parent::setUp();
         Functions\when( 'add_action' )->justReturn( null );
         Functions\when( 'add_filter' )->justReturn( null );
+        $_POST = array();
         $this->admin = new OIDC_Admin();
+    }
+
+    protected function tearDown(): void {
+        $_POST = array();
+        parent::tearDown();
     }
 
     // -------------------------------------------------------------------------
@@ -296,5 +302,218 @@ class AdminTest extends WpTestCase {
 
         $this->admin->enqueue_scripts( 'settings_page_oidc-client' );
         $this->addToAssertionCount( 1 );
+    }
+
+    // -------------------------------------------------------------------------
+    // field_discovery_url (Output-Test)
+    // -------------------------------------------------------------------------
+
+    public function test_field_discovery_url_outputs_url_input() {
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'esc_attr' )->returnArg();
+        Functions\when( 'esc_html_e' )->justReturn( null );
+
+        ob_start();
+        $this->admin->field_discovery_url();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString( 'type="url"', $output );
+        $this->assertStringContainsString( 'oidc_discovery_url', $output );
+        $this->assertStringContainsString( 'oidc-fetch-discovery', $output );
+    }
+
+    // -------------------------------------------------------------------------
+    // field_redirect_uri (Output-Test)
+    // -------------------------------------------------------------------------
+
+    public function test_field_redirect_uri_outputs_readonly_input() {
+        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
+        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
+        Functions\when( 'esc_attr' )->returnArg();
+        Functions\when( 'esc_html_e' )->justReturn( null );
+
+        ob_start();
+        $this->admin->field_redirect_uri();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString( 'readonly', $output );
+        $this->assertStringContainsString( 'oidc_callback=1', $output );
+    }
+
+    // -------------------------------------------------------------------------
+    // field_token_auth_method (Output-Test)
+    // -------------------------------------------------------------------------
+
+    public function test_field_token_auth_method_outputs_select() {
+        Functions\when( 'get_option' )->justReturn( 'client_secret_post' );
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'esc_attr' )->returnArg();
+        Functions\when( 'esc_html' )->returnArg();
+        Functions\when( 'esc_html__' )->returnArg();
+        Functions\when( 'selected' )->alias( function ( $selected, $current, $_echo = true ) {
+            return $selected === $current ? ' selected="selected"' : '';
+        } );
+
+        ob_start();
+        $this->admin->field_token_auth_method();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString( '<select', $output );
+        $this->assertStringContainsString( 'client_secret_post', $output );
+        $this->assertStringContainsString( 'client_secret_basic', $output );
+    }
+
+    // -------------------------------------------------------------------------
+    // field_remember_me (Output-Test)
+    // -------------------------------------------------------------------------
+
+    public function test_field_remember_me_outputs_select_with_options() {
+        Functions\when( 'get_option' )->justReturn( 'never' );
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'esc_attr' )->returnArg();
+        Functions\when( 'esc_html' )->returnArg();
+        Functions\when( 'selected' )->alias( function ( $selected, $current, $_echo = true ) {
+            return $selected === $current ? ' selected="selected"' : '';
+        } );
+
+        ob_start();
+        $this->admin->field_remember_me();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString( '<select', $output );
+        $this->assertStringContainsString( 'never', $output );
+        $this->assertStringContainsString( 'always', $output );
+    }
+
+    // -------------------------------------------------------------------------
+    // ajax_fetch_discovery
+    // -------------------------------------------------------------------------
+
+    public function test_ajax_fetch_discovery_no_permission_sends_error() {
+        Functions\when( 'check_ajax_referer' )->justReturn( true );
+        Functions\when( 'current_user_can' )->justReturn( false );
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_send_json_error' )->alias( function ( $data, $status ) {
+            throw new OidcTestException( 'error:' . $status );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $this->expectExceptionMessage( 'error:403' );
+        $this->admin->ajax_fetch_discovery();
+    }
+
+    public function test_ajax_fetch_discovery_empty_url_sends_error() {
+        $_POST['url'] = '';
+        Functions\when( 'check_ajax_referer' )->justReturn( true );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'esc_url_raw' )->returnArg();
+        Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_send_json_error' )->alias( function ( $data, $status ) {
+            throw new OidcTestException( 'error:' . $status );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $this->expectExceptionMessage( 'error:400' );
+        $this->admin->ajax_fetch_discovery();
+    }
+
+    public function test_ajax_fetch_discovery_invalid_url_sends_error() {
+        $_POST['url'] = 'not-a-url';
+        Functions\when( 'check_ajax_referer' )->justReturn( true );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'esc_url_raw' )->returnArg();
+        Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_send_json_error' )->alias( function ( $data, $status ) {
+            throw new OidcTestException( 'error:' . $status );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $this->expectExceptionMessage( 'error:400' );
+        $this->admin->ajax_fetch_discovery();
+    }
+
+    public function test_ajax_fetch_discovery_http_error_sends_error() {
+        $_POST['url'] = 'https://provider.example.com/.well-known/openid-configuration';
+        Functions\when( 'check_ajax_referer' )->justReturn( true );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'esc_url_raw' )->returnArg();
+        Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( 'wp_remote_get' )->justReturn( new WP_Error( 'http_request_failed', 'timeout' ) );
+        Functions\when( 'wp_send_json_error' )->alias( function ( $data, $status ) {
+            throw new OidcTestException( 'error:' . $status );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $this->expectExceptionMessage( 'error:500' );
+        $this->admin->ajax_fetch_discovery();
+    }
+
+    public function test_ajax_fetch_discovery_non_200_sends_error() {
+        $_POST['url'] = 'https://provider.example.com/.well-known/openid-configuration';
+        Functions\when( 'check_ajax_referer' )->justReturn( true );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'esc_url_raw' )->returnArg();
+        Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( 'wp_remote_get' )->justReturn( array() );
+        Functions\when( 'wp_remote_retrieve_response_code' )->justReturn( 404 );
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_send_json_error' )->alias( function ( $data, $status ) {
+            throw new OidcTestException( 'error:' . $status );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $this->expectExceptionMessage( 'error:500' );
+        $this->admin->ajax_fetch_discovery();
+    }
+
+    public function test_ajax_fetch_discovery_invalid_json_sends_error() {
+        $_POST['url'] = 'https://provider.example.com/.well-known/openid-configuration';
+        Functions\when( 'check_ajax_referer' )->justReturn( true );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'esc_url_raw' )->returnArg();
+        Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( 'wp_remote_get' )->justReturn( array() );
+        Functions\when( 'wp_remote_retrieve_response_code' )->justReturn( 200 );
+        Functions\when( 'wp_remote_retrieve_body' )->justReturn( 'not-json' );
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_send_json_error' )->alias( function ( $data, $status ) {
+            throw new OidcTestException( 'error:' . $status );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $this->expectExceptionMessage( 'error:500' );
+        $this->admin->ajax_fetch_discovery();
+    }
+
+    public function test_ajax_fetch_discovery_success_sends_json_success() {
+        $_POST['url'] = 'https://provider.example.com/.well-known/openid-configuration';
+        $discovery = array(
+            'authorization_endpoint'           => 'https://provider.example.com/auth',
+            'token_endpoint'                   => 'https://provider.example.com/token',
+            'userinfo_endpoint'                => 'https://provider.example.com/userinfo',
+            'jwks_uri'                         => 'https://provider.example.com/jwks',
+            'issuer'                           => 'https://provider.example.com',
+            'end_session_endpoint'             => 'https://provider.example.com/logout',
+            'code_challenge_methods_supported' => array( 'S256' ),
+        );
+        Functions\when( 'check_ajax_referer' )->justReturn( true );
+        Functions\when( 'current_user_can' )->justReturn( true );
+        Functions\when( 'esc_url_raw' )->returnArg();
+        Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( 'wp_remote_get' )->justReturn( array() );
+        Functions\when( 'wp_remote_retrieve_response_code' )->justReturn( 200 );
+        Functions\when( 'wp_remote_retrieve_body' )->justReturn( json_encode( $discovery ) );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        $sent = null;
+        Functions\when( 'wp_send_json_success' )->alias( function ( $data ) use ( &$sent ) {
+            $sent = $data;
+            throw new OidcTestException( 'success' );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $this->expectExceptionMessage( 'success' );
+        $this->admin->ajax_fetch_discovery();
     }
 }
