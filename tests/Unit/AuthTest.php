@@ -522,10 +522,8 @@ class AuthTest extends WpTestCase {
         $this->addToAssertionCount( 1 );
     }
 
-    public function test_handle_callback_with_error_param_logs_and_redirects() {
-        $_GET['oidc_callback'] = '1';
-        $_GET['error']         = 'access_denied';
-
+    /** Gemeinsame Mocks für handle_callback-Fehlerpfad-Tests (Redirect zu wp-login mit Fehler). */
+    private function setUpCallbackErrorMocks(): void {
         $GLOBALS['wpdb'] = new class { public $prefix = 'wp_'; public function insert( $t, $d, $f ) {} };
         Functions\when( 'sanitize_text_field' )->returnArg();
         Functions\when( 'wp_unslash' )->returnArg();
@@ -536,6 +534,12 @@ class AuthTest extends WpTestCase {
         Functions\when( 'wp_safe_redirect' )->alias( function ( $url ) {
             throw new OidcTestException( $url );
         } );
+    }
+
+    public function test_handle_callback_with_error_param_logs_and_redirects() {
+        $_GET['oidc_callback'] = '1';
+        $_GET['error']         = 'access_denied';
+        $this->setUpCallbackErrorMocks();
 
         $this->expectException( OidcTestException::class );
         $this->auth->handle_callback();
@@ -544,17 +548,7 @@ class AuthTest extends WpTestCase {
     public function test_handle_callback_missing_code_redirects_with_error() {
         $_GET['oidc_callback'] = '1';
         // Kein code, kein state
-
-        $GLOBALS['wpdb'] = new class { public $prefix = 'wp_'; public function insert( $t, $d, $f ) {} };
-        Functions\when( 'sanitize_text_field' )->returnArg();
-        Functions\when( 'wp_unslash' )->returnArg();
-        Functions\when( '__' )->returnArg();
-        Functions\when( 'current_time' )->justReturn( '2026-01-01 12:00:00' );
-        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
-        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_error=...' );
-        Functions\when( 'wp_safe_redirect' )->alias( function ( $url ) {
-            throw new OidcTestException( $url );
-        } );
+        $this->setUpCallbackErrorMocks();
 
         $this->expectException( OidcTestException::class );
         $this->auth->handle_callback();
@@ -564,19 +558,9 @@ class AuthTest extends WpTestCase {
         $_GET['oidc_callback'] = '1';
         $_GET['code']          = 'auth-code';
         $_GET['state']         = 'invalid-state';
-
-        $GLOBALS['wpdb'] = new class { public $prefix = 'wp_'; public function insert( $t, $d, $f ) {} };
-        Functions\when( 'sanitize_text_field' )->returnArg();
-        Functions\when( 'wp_unslash' )->returnArg();
+        $this->setUpCallbackErrorMocks();
         Functions\when( 'get_transient' )->justReturn( false ); // State ungültig
         Functions\when( 'delete_transient' )->justReturn( true );
-        Functions\when( '__' )->returnArg();
-        Functions\when( 'current_time' )->justReturn( '2026-01-01 12:00:00' );
-        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
-        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_error=...' );
-        Functions\when( 'wp_safe_redirect' )->alias( function ( $url ) {
-            throw new OidcTestException( $url );
-        } );
 
         $this->expectException( OidcTestException::class );
         $this->auth->handle_callback();
