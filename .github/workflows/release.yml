@@ -74,6 +74,7 @@ jobs:
         run: |
           sed -i "s/^\( \* Version:\s*\).*/\1${VERSION}/" oidc-client.php
           sed -i "s/^define( 'OIDC_CLIENT_VERSION', '[^']*' );/define( 'OIDC_CLIENT_VERSION', '${VERSION}' );/" oidc-client.php
+          sed -i "s/^Stable tag:.*/Stable tag: ${VERSION}/" readme.txt
 
       - name: Produktiv-Abhängigkeiten installieren
         run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
