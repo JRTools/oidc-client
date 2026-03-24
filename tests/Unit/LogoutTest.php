@@ -57,11 +57,27 @@ class LogoutTest extends WpTestCase {
     /** @var OIDC_Logout */
     private $logout;
 
+    /** Standard-events-Claim für Backchannel-Logout-Token. */
+    private const EVENTS = array( 'http://schemas.openid.net/event/backchannel-logout' => array() );
+
     protected function setUp(): void {
         parent::setUp();
         Functions\when( 'add_action' )->justReturn( null );
         Functions\when( 'add_filter' )->justReturn( null );
         $this->logout = new OIDC_Logout();
+    }
+
+    /** Baut ein Logout-JWT mit den gegebenen Payload-Claims. */
+    private function buildLogoutJwt( array $payload ): string {
+        $header = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
+        return $header . '.' . base64_encode( json_encode( $payload ) ) . '.fakesig';
+    }
+
+    /** Erstellt einen WP_REST_Request mit dem gesetzten logout_token. */
+    private function makeRequest( string $jwt ): WP_REST_Request {
+        $request = new WP_REST_Request();
+        $request->set_param( 'logout_token', $jwt );
+        return $request;
     }
 
     // -------------------------------------------------------------------------
@@ -179,19 +195,8 @@ class LogoutTest extends WpTestCase {
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->justReturn( '' );
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'sub'    => 'user123',
-            'iat'    => time(),
-            'nonce'  => 'should-not-be-here',
-            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
-        ) ) );
-        $jwt = $header . '.' . $payload . '.fakesig';
-
-        $request = new WP_REST_Request();
-        $request->set_param( 'logout_token', $jwt );
-
-        $response = $this->logout->handle_backchannel_logout( $request );
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user123', 'iat' => time(), 'nonce' => 'should-not-be-here', 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
 
         $this->assertSame( 400, $response->status );
         $this->assertSame( 'logout_token_nonce', $response->data['error'] );
@@ -201,17 +206,8 @@ class LogoutTest extends WpTestCase {
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->justReturn( '' );
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'sub' => 'user123',
-            'iat' => time(),
-        ) ) );
-        $jwt = $header . '.' . $payload . '.fakesig';
-
-        $request = new WP_REST_Request();
-        $request->set_param( 'logout_token', $jwt );
-
-        $response = $this->logout->handle_backchannel_logout( $request );
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user123', 'iat' => time() ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
 
         $this->assertSame( 400, $response->status );
         $this->assertSame( 'logout_token_events', $response->data['error'] );
@@ -221,17 +217,8 @@ class LogoutTest extends WpTestCase {
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->justReturn( '' );
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'iat'    => time(),
-            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
-        ) ) );
-        $jwt = $header . '.' . $payload . '.fakesig';
-
-        $request = new WP_REST_Request();
-        $request->set_param( 'logout_token', $jwt );
-
-        $response = $this->logout->handle_backchannel_logout( $request );
+        $jwt      = $this->buildLogoutJwt( array( 'iat' => time(), 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
 
         $this->assertSame( 400, $response->status );
         $this->assertSame( 'logout_token_subject', $response->data['error'] );
@@ -243,19 +230,8 @@ class LogoutTest extends WpTestCase {
         Functions\when( 'sanitize_text_field' )->returnArg();
         Functions\when( 'get_transient' )->justReturn( 1 ); // bereits verwendet
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'sub'    => 'user123',
-            'iat'    => time(),
-            'jti'    => 'unique-jti-123',
-            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
-        ) ) );
-        $jwt = $header . '.' . $payload . '.fakesig';
-
-        $request = new WP_REST_Request();
-        $request->set_param( 'logout_token', $jwt );
-
-        $response = $this->logout->handle_backchannel_logout( $request );
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user123', 'iat' => time(), 'jti' => 'unique-jti-123', 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
 
         $this->assertSame( 400, $response->status );
         $this->assertSame( 'logout_token_replay', $response->data['error'] );
@@ -269,19 +245,8 @@ class LogoutTest extends WpTestCase {
         Functions\when( 'set_transient' )->justReturn( true );
         Functions\when( 'get_users' )->justReturn( array() );
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'sub'    => 'unknown-user',
-            'iat'    => time(),
-            'jti'    => 'jti-abc',
-            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
-        ) ) );
-        $jwt = $header . '.' . $payload . '.fakesig';
-
-        $request = new WP_REST_Request();
-        $request->set_param( 'logout_token', $jwt );
-
-        $response = $this->logout->handle_backchannel_logout( $request );
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'unknown-user', 'iat' => time(), 'jti' => 'jti-abc', 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
 
         $this->assertSame( 200, $response->status );
     }
@@ -296,26 +261,14 @@ class LogoutTest extends WpTestCase {
         Functions\when( 'get_user_meta' )->justReturn( '' );
         Functions\when( 'delete_user_meta' )->justReturn( true );
 
-        $wpdb            = new FakeWpdb();
-        $GLOBALS['wpdb'] = $wpdb;
+        $GLOBALS['wpdb'] = new FakeWpdb();
 
         $user     = new WP_User();
         $user->ID = 42;
         Functions\when( 'get_users' )->justReturn( array( $user ) );
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'sub'    => 'user42',
-            'iat'    => time(),
-            'jti'    => 'jti-xyz',
-            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
-        ) ) );
-        $jwt = $header . '.' . $payload . '.fakesig';
-
-        $request = new WP_REST_Request();
-        $request->set_param( 'logout_token', $jwt );
-
-        $response = $this->logout->handle_backchannel_logout( $request );
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user42', 'iat' => time(), 'jti' => 'jti-xyz', 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
 
         $this->assertSame( 200, $response->status );
 
@@ -346,19 +299,8 @@ class LogoutTest extends WpTestCase {
             return $default;
         } );
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'iss'    => 'https://wrong-issuer.example.com',
-            'sub'    => 'user123',
-            'iat'    => time(),
-            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
-        ) ) );
-        $jwt = $header . '.' . $payload . '.fakesig';
-
-        $request = new WP_REST_Request();
-        $request->set_param( 'logout_token', $jwt );
-
-        $response = $this->logout->handle_backchannel_logout( $request );
+        $jwt      = $this->buildLogoutJwt( array( 'iss' => 'https://wrong-issuer.example.com', 'sub' => 'user123', 'iat' => time(), 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
 
         $this->assertSame( 400, $response->status );
         $this->assertSame( 'logout_token_iss', $response->data['error'] );
@@ -372,19 +314,8 @@ class LogoutTest extends WpTestCase {
             return $default;
         } );
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'sub'    => 'user123',
-            'aud'    => 'wrong-client',
-            'iat'    => time(),
-            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
-        ) ) );
-        $jwt = $header . '.' . $payload . '.fakesig';
-
-        $request = new WP_REST_Request();
-        $request->set_param( 'logout_token', $jwt );
-
-        $response = $this->logout->handle_backchannel_logout( $request );
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user123', 'aud' => 'wrong-client', 'iat' => time(), 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
 
         $this->assertSame( 400, $response->status );
         $this->assertSame( 'logout_token_aud', $response->data['error'] );
@@ -402,20 +333,8 @@ class LogoutTest extends WpTestCase {
         Functions\when( 'set_transient' )->justReturn( true );
         Functions\when( 'get_users' )->justReturn( array() );
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'sub'    => 'user123',
-            'aud'    => array( 'other-client', 'my-client' ),
-            'iat'    => time(),
-            'jti'    => 'jti-array-test',
-            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
-        ) ) );
-        $jwt = $header . '.' . $payload . '.fakesig';
-
-        $request = new WP_REST_Request();
-        $request->set_param( 'logout_token', $jwt );
-
-        $response = $this->logout->handle_backchannel_logout( $request );
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user123', 'aud' => array( 'other-client', 'my-client' ), 'iat' => time(), 'jti' => 'jti-array-test', 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
 
         $this->assertSame( 200, $response->status );
     }
@@ -424,18 +343,8 @@ class LogoutTest extends WpTestCase {
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->justReturn( '' );
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'sub'    => 'user123',
-            'iat'    => time() + 600, // 10 Minuten in der Zukunft
-            'events' => array( 'http://schemas.openid.net/event/backchannel-logout' => new stdClass() ),
-        ) ) );
-        $jwt = $header . '.' . $payload . '.fakesig';
-
-        $request = new WP_REST_Request();
-        $request->set_param( 'logout_token', $jwt );
-
-        $response = $this->logout->handle_backchannel_logout( $request );
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user123', 'iat' => time() + 600, 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
 
         $this->assertSame( 400, $response->status );
         $this->assertSame( 'logout_token_iat', $response->data['error'] );
