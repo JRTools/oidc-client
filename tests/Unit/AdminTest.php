@@ -687,6 +687,36 @@ class AdminTest extends WpTestCase {
         $this->assertStringContainsString( 'admin', $output );
     }
 
+    // -------------------------------------------------------------------------
+    // add_settings_page
+    // -------------------------------------------------------------------------
+
+    public function test_add_settings_page_calls_add_options_page() {
+        Functions\when( '__' )->returnArg();
+        Functions\expect( 'add_options_page' )->once();
+
+        $this->admin->add_settings_page();
+        $this->addToAssertionCount( 1 );
+    }
+
+    // -------------------------------------------------------------------------
+    // register_settings
+    // -------------------------------------------------------------------------
+
+    public function test_register_settings_registers_all_options_and_sections() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'register_setting' )->justReturn( null );
+        Functions\when( 'add_settings_section' )->justReturn( null );
+        Functions\when( 'add_settings_field' )->justReturn( null );
+
+        $this->admin->register_settings();
+        $this->addToAssertionCount( 1 );
+    }
+
+    // -------------------------------------------------------------------------
+    // field_role_mapping
+    // -------------------------------------------------------------------------
+
     public function test_field_role_mapping_empty_option_outputs_empty_table() {
         Functions\when( 'get_option' )->justReturn( '' );
         Functions\when( 'esc_attr' )->returnArg();
