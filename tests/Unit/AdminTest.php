@@ -610,4 +610,100 @@ class AdminTest extends WpTestCase {
         $this->assertStringContainsString( 'wrap', $output );
         $this->assertStringContainsString( 'form', $output );
     }
+
+    // -------------------------------------------------------------------------
+    // section_provider_description / section_roles_description
+    // -------------------------------------------------------------------------
+
+    public function test_section_provider_description_outputs_paragraph() {
+        Functions\when( 'esc_html__' )->returnArg();
+
+        ob_start();
+        $this->admin->section_provider_description();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString( '<p>', $output );
+    }
+
+    public function test_section_roles_description_outputs_paragraph() {
+        Functions\when( 'esc_html__' )->returnArg();
+
+        ob_start();
+        $this->admin->section_roles_description();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString( '<p>', $output );
+    }
+
+    // -------------------------------------------------------------------------
+    // enqueue_scripts
+    // -------------------------------------------------------------------------
+
+    public function test_enqueue_scripts_wrong_hook_does_nothing() {
+        Functions\expect( 'wp_enqueue_style' )->never();
+        Functions\expect( 'wp_enqueue_script' )->never();
+
+        $this->admin->enqueue_scripts( 'options-general.php' );
+        $this->addToAssertionCount( 1 );
+    }
+
+    public function test_enqueue_scripts_correct_hook_enqueues_assets() {
+        Functions\expect( 'wp_enqueue_style' )->once();
+        Functions\expect( 'wp_enqueue_script' )->once();
+        Functions\when( 'wp_localize_script' )->justReturn( null );
+        Functions\when( 'admin_url' )->justReturn( 'https://example.com/wp-admin/admin-ajax.php' );
+        Functions\when( 'wp_create_nonce' )->justReturn( 'nonce123' );
+        Functions\when( '__' )->returnArg();
+
+        $this->admin->enqueue_scripts( 'settings_page_oidc-client' );
+        $this->addToAssertionCount( 1 );
+    }
+
+    // -------------------------------------------------------------------------
+    // field_role_mapping
+    // -------------------------------------------------------------------------
+
+    public function test_field_role_mapping_outputs_table_with_existing_mapping() {
+        $mapping = json_encode( array( 'admin' => 'administrator' ) );
+        Functions\when( 'get_option' )->justReturn( $mapping );
+        Functions\when( 'esc_attr' )->returnArg();
+        Functions\when( 'esc_html' )->returnArg();
+        Functions\when( 'esc_html__' )->returnArg();
+        Functions\when( 'esc_html_e' )->justReturn( null );
+        Functions\when( 'esc_js' )->returnArg();
+        Functions\when( 'translate_user_role' )->returnArg();
+        Functions\when( 'selected' )->justReturn( '' );
+        $wpRoles        = new stdClass();
+        $wpRoles->roles = array( 'administrator' => array( 'name' => 'Administrator' ) );
+        Functions\when( 'wp_roles' )->justReturn( $wpRoles );
+        Functions\when( 'wp_json_encode' )->alias( 'json_encode' );
+        Functions\when( '__' )->returnArg();
+
+        ob_start();
+        $this->admin->field_role_mapping();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString( 'oidc-role-mapping-table', $output );
+        $this->assertStringContainsString( 'admin', $output );
+    }
+
+    public function test_field_role_mapping_empty_option_outputs_empty_table() {
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'esc_attr' )->returnArg();
+        Functions\when( 'esc_html__' )->returnArg();
+        Functions\when( 'esc_html_e' )->justReturn( null );
+        Functions\when( 'esc_js' )->returnArg();
+        Functions\when( 'translate_user_role' )->returnArg();
+        $wpRoles        = new stdClass();
+        $wpRoles->roles = array();
+        Functions\when( 'wp_roles' )->justReturn( $wpRoles );
+        Functions\when( 'wp_json_encode' )->alias( 'json_encode' );
+        Functions\when( '__' )->returnArg();
+
+        ob_start();
+        $this->admin->field_role_mapping();
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString( 'oidc-role-mapping-table', $output );
+    }
 }
