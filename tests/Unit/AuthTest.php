@@ -103,6 +103,32 @@ class AuthTest extends WpTestCase {
     }
 
     /**
+     * Gemeinsame Mocks für initiate_login-Tests.
+     * @param string $pkce '1' = PKCE aktiv, '' = deaktiviert
+     */
+    private function setUpInitiateLoginMocks( string $pkce = '', string $scopes = 'openid email' ): void {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) use ( $pkce, $scopes ) {
+            if ( $key === 'oidc_client_id' )              { return 'my-client'; }
+            if ( $key === 'oidc_authorization_endpoint' ) { return 'https://provider.example.com/auth'; }
+            if ( $key === 'oidc_scopes' )                 { return $scopes; }
+            if ( $key === 'oidc_pkce_supported' )         { return $pkce; }
+            return $default;
+        } );
+        Functions\when( 'set_transient' )->justReturn( true );
+        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
+        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
+        Functions\when( 'wp_redirect' )->alias( function ( $url ) {
+            throw new OidcTestException( $url );
+        } );
+    }
+
+    /** Baut ein minimales JWT aus Header + Payload-Array. */
+    private function buildJwt( array $payload, string $alg = 'RS256' ): string {
+        $header = base64_encode( json_encode( array( 'alg' => $alg, 'typ' => 'JWT' ) ) );
+        return $header . '.' . base64_encode( json_encode( $payload ) ) . '.signature';
+    }
+
+    /**
      * Gemeinsame Mocks für authenticate_user-Tests: Login-Abschluss (wp_safe_redirect).
      * Setzt wpdb-Stub und alle Mocks, die für den erfolgreichen Login-Flow nötig sind.
      */
@@ -460,19 +486,7 @@ class AuthTest extends WpTestCase {
     }
 
     public function test_initiate_login_redirects_with_required_params() {
-        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_client_id' )              { return 'my-client'; }
-            if ( $key === 'oidc_authorization_endpoint' ) { return 'https://provider.example.com/auth'; }
-            if ( $key === 'oidc_scopes' )                 { return 'openid email'; }
-            if ( $key === 'oidc_pkce_supported' )         { return ''; } // PKCE deaktiviert
-            return $default;
-        } );
-        Functions\when( 'set_transient' )->justReturn( true );
-        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
-        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
-        Functions\when( 'wp_redirect' )->alias( function ( $url ) {
-            throw new OidcTestException( $url );
-        } );
+        $this->setUpInitiateLoginMocks( '' );
 
         $this->expectException( OidcTestException::class );
         $this->expectExceptionMessageMatches( '/response_type=code/' );
@@ -480,19 +494,7 @@ class AuthTest extends WpTestCase {
     }
 
     public function test_initiate_login_with_pkce_adds_code_challenge() {
-        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_client_id' )              { return 'my-client'; }
-            if ( $key === 'oidc_authorization_endpoint' ) { return 'https://provider.example.com/auth'; }
-            if ( $key === 'oidc_scopes' )                 { return 'openid email'; }
-            if ( $key === 'oidc_pkce_supported' )         { return '1'; }
-            return $default;
-        } );
-        Functions\when( 'set_transient' )->justReturn( true );
-        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
-        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
-        Functions\when( 'wp_redirect' )->alias( function ( $url ) {
-            throw new OidcTestException( $url );
-        } );
+        $this->setUpInitiateLoginMocks( '1' );
 
         $this->expectException( OidcTestException::class );
         $this->expectExceptionMessageMatches( '/code_challenge/' );
@@ -500,20 +502,8 @@ class AuthTest extends WpTestCase {
     }
 
     public function test_initiate_login_with_extra_prompt_param() {
-        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_client_id' )              { return 'my-client'; }
-            if ( $key === 'oidc_authorization_endpoint' ) { return 'https://provider.example.com/auth'; }
-            if ( $key === 'oidc_scopes' )                 { return 'openid'; }
-            if ( $key === 'oidc_pkce_supported' )         { return ''; }
-            return $default;
-        } );
-        Functions\when( 'set_transient' )->justReturn( true );
+        $this->setUpInitiateLoginMocks( '', 'openid' );
         Functions\when( 'sanitize_text_field' )->returnArg();
-        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
-        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
-        Functions\when( 'wp_redirect' )->alias( function ( $url ) {
-            throw new OidcTestException( $url );
-        } );
 
         $this->expectException( OidcTestException::class );
         $this->expectExceptionMessageMatches( '/prompt=login/' );
@@ -762,14 +752,7 @@ class AuthTest extends WpTestCase {
             return $default;
         } );
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256', 'typ' => 'JWT' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'exp' => time() + 3600,
-            'iat' => time() - 60,
-            'iss' => 'https://wrong.example.com',
-        ) ) );
-        $jwt = $header . '.' . $payload . '.signature';
-
+        $jwt    = $this->buildJwt( array( 'exp' => time() + 3600, 'iat' => time() - 60, 'iss' => 'https://wrong.example.com' ) );
         $result = $this->auth->public_validate_id_token( $jwt );
 
         $this->assertInstanceOf( WP_Error::class, $result );
@@ -784,14 +767,7 @@ class AuthTest extends WpTestCase {
             return $default;
         } );
 
-        $header  = base64_encode( json_encode( array( 'alg' => 'RS256', 'typ' => 'JWT' ) ) );
-        $payload = base64_encode( json_encode( array(
-            'exp' => time() + 3600,
-            'iat' => time() - 60,
-            'aud' => 'wrong-audience',
-        ) ) );
-        $jwt = $header . '.' . $payload . '.signature';
-
+        $jwt    = $this->buildJwt( array( 'exp' => time() + 3600, 'iat' => time() - 60, 'aud' => 'wrong-audience' ) );
         $result = $this->auth->public_validate_id_token( $jwt );
 
         $this->assertInstanceOf( WP_Error::class, $result );
@@ -976,12 +952,9 @@ class AuthTest extends WpTestCase {
         $this->auth->public_authenticate_user( array( 'email' => 'new@example.com', 'sub' => 'sub123' ) );
     }
 
-    public function test_authenticate_user_creates_new_user_and_logs_in() {
-        $newUser            = new WP_User();
-        $newUser->ID        = 42;
-        $newUser->user_login = 'newuser';
-
-        Functions\when( 'get_option' )->alias( function ( $key, $default = false ) {
+    /** Gemeinsamer get_option-Alias für Neuerstellungs-Tests (create_user=true, never-remember). */
+    private function newUserOptions(): \Closure {
+        return function ( $key, $default = false ) {
             if ( $key === 'oidc_active_claim' )   { return ''; }
             if ( $key === 'oidc_create_user' )    { return true; }
             if ( $key === 'oidc_default_role' )   { return 'subscriber'; }
@@ -989,7 +962,15 @@ class AuthTest extends WpTestCase {
             if ( $key === 'oidc_remember_me' )    { return 'never'; }
             if ( $key === 'oidc_enable_refresh' ) { return ''; }
             return $default;
-        } );
+        };
+    }
+
+    public function test_authenticate_user_creates_new_user_and_logs_in() {
+        $newUser            = new WP_User();
+        $newUser->ID        = 42;
+        $newUser->user_login = 'newuser';
+
+        Functions\when( 'get_option' )->alias( $this->newUserOptions() );
         Functions\when( 'get_users' )->justReturn( array() );
         Functions\when( 'get_user_by' )->justReturn( $newUser );
         Functions\when( 'sanitize_user' )->returnArg();
@@ -1068,15 +1049,7 @@ class AuthTest extends WpTestCase {
         $newUser->ID        = 55;
         $newUser->user_login = 'newuser_abc12';
 
-        Functions\when( 'get_option' )->alias( function ( $key, $default = false ) {
-            if ( $key === 'oidc_active_claim' )   { return ''; }
-            if ( $key === 'oidc_create_user' )    { return true; }
-            if ( $key === 'oidc_default_role' )   { return 'subscriber'; }
-            if ( $key === 'oidc_sync_avatar' )    { return ''; }
-            if ( $key === 'oidc_remember_me' )    { return 'never'; }
-            if ( $key === 'oidc_enable_refresh' ) { return ''; }
-            return $default;
-        } );
+        Functions\when( 'get_option' )->alias( $this->newUserOptions() );
         Functions\when( 'get_users' )->justReturn( array() );
         Functions\when( 'get_user_by' )->justReturn( $newUser );
         Functions\when( 'sanitize_user' )->returnArg();
