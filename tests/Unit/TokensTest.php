@@ -312,4 +312,120 @@ class TokensTest extends WpTestCase {
         $this->assertInstanceOf( WP_Error::class, $result );
         $this->assertSame( 'no_refresh_token', $result->get_error_code() );
     }
+
+    /** Hilfsmethode: get_user_meta-Alias mit abgelaufenem Access-Token und vorhandenem Refresh-Token. */
+    private function expiredTokenMeta( string $refresh_token ): callable {
+        return function ( $_user_id, $meta_key, $_single ) use ( $refresh_token ) {
+            if ( $meta_key === '_oidc_access_token' ) { return ''; }
+            if ( $meta_key === '_oidc_access_token_expires' ) { return '0'; }
+            if ( $meta_key === '_oidc_refresh_token' ) { return $refresh_token; }
+            return '';
+        };
+    }
+
+    public function test_get_valid_access_token_returns_wp_error_on_http_failure() {
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
+        Functions\when( '__' )->returnArg();
+
+        $http_error = new WP_Error( 'http_request_failed', 'Connection refused' );
+        Functions\when( 'wp_remote_post' )->justReturn( $http_error );
+        Functions\when( 'is_wp_error' )->alias( function ( $thing ) {
+            return $thing instanceof WP_Error;
+        } );
+
+        $tokens = new OIDC_Tokens();
+        $result = $tokens->get_valid_access_token( 1 );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'http_request_failed', $result->get_error_code() );
+    }
+
+    public function test_get_valid_access_token_returns_error_on_provider_error_response() {
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'sanitize_text_field' )->returnArg();
+
+        Functions\when( 'wp_remote_post' )->justReturn( array( 'response' => array( 'code' => 400 ) ) );
+        Functions\when( 'is_wp_error' )->alias( function ( $thing ) { return $thing instanceof WP_Error; } );
+        Functions\when( 'wp_remote_retrieve_body' )->justReturn(
+            json_encode( array( 'error' => 'invalid_grant', 'error_description' => 'Token expired' ) )
+        );
+
+        $tokens = new OIDC_Tokens();
+        $result = $tokens->get_valid_access_token( 1 );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'refresh_error', $result->get_error_code() );
+    }
+
+    public function test_get_valid_access_token_returns_error_when_access_token_missing_in_response() {
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
+        Functions\when( '__' )->returnArg();
+
+        Functions\when( 'wp_remote_post' )->justReturn( array( 'response' => array( 'code' => 200 ) ) );
+        Functions\when( 'is_wp_error' )->alias( function ( $thing ) { return $thing instanceof WP_Error; } );
+        Functions\when( 'wp_remote_retrieve_body' )->justReturn( json_encode( array( 'token_type' => 'Bearer' ) ) );
+
+        $tokens = new OIDC_Tokens();
+        $result = $tokens->get_valid_access_token( 1 );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'refresh_failed', $result->get_error_code() );
+    }
+
+    public function test_get_valid_access_token_refreshes_with_client_secret_post() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'oidc_client_id' )         { return 'my-client'; }
+            if ( $key === 'oidc_client_secret' )     { return 'my-secret'; }
+            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
+            return $default;
+        } );
+        Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
+        Functions\when( 'update_user_meta' )->justReturn( true );
+
+        Functions\when( 'wp_remote_post' )->justReturn( array( 'response' => array( 'code' => 200 ) ) );
+        Functions\when( 'is_wp_error' )->alias( function ( $thing ) { return $thing instanceof WP_Error; } );
+        Functions\when( 'wp_remote_retrieve_body' )->justReturn(
+            json_encode( array( 'access_token' => 'new-access-token', 'expires_in' => 3600 ) )
+        );
+
+        $tokens = new OIDC_Tokens();
+        $result = $tokens->get_valid_access_token( 1 );
+
+        $this->assertSame( 'new-access-token', $result );
+    }
+
+    public function test_get_valid_access_token_refreshes_with_client_secret_basic() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'oidc_client_id' )         { return 'my-client'; }
+            if ( $key === 'oidc_client_secret' )     { return 'my-secret'; }
+            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_basic'; }
+            return $default;
+        } );
+        Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
+        Functions\when( 'update_user_meta' )->justReturn( true );
+
+        $captured_args = null;
+        Functions\when( 'wp_remote_post' )->alias( function ( $url, $args ) use ( &$captured_args ) {
+            $captured_args = $args;
+            return array( 'response' => array( 'code' => 200 ) );
+        } );
+        Functions\when( 'is_wp_error' )->alias( function ( $thing ) { return $thing instanceof WP_Error; } );
+        Functions\when( 'wp_remote_retrieve_body' )->justReturn(
+            json_encode( array( 'access_token' => 'new-access-token', 'expires_in' => 3600 ) )
+        );
+
+        $tokens = new OIDC_Tokens();
+        $result = $tokens->get_valid_access_token( 1 );
+
+        $this->assertSame( 'new-access-token', $result );
+        $this->assertArrayHasKey( 'Authorization', $captured_args['headers'] );
+        $this->assertStringStartsWith( 'Basic ', $captured_args['headers']['Authorization'] );
+        $this->assertArrayNotHasKey( 'client_secret', $captured_args['body'] );
+    }
 }
