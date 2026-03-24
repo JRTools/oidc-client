@@ -411,7 +411,7 @@ class TokensTest extends WpTestCase {
         Functions\when( 'update_user_meta' )->justReturn( true );
 
         $captured_args = null;
-        Functions\when( 'wp_remote_post' )->alias( function ( $url, $args ) use ( &$captured_args ) {
+        Functions\when( 'wp_remote_post' )->alias( function ( $_url, $args ) use ( &$captured_args ) {
             $captured_args = $args;
             return array( 'response' => array( 'code' => 200 ) );
         } );

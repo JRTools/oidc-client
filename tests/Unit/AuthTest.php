@@ -1215,7 +1215,7 @@ class AuthTest extends WpTestCase {
             if ( $key === 'oidc_enable_refresh' )    { return ''; }
             return $default;
         } );
-        Functions\when( 'get_transient' )->alias( function ( $key ) use ( $nonce ) {
+        Functions\when( 'get_transient' )->alias( function ( $key ) {
             if ( strpos( $key, 'oidc_state_' ) === 0 )  { return 1; }
             if ( strpos( $key, 'oidc_pkce_' ) === 0 )   { return ''; }
             if ( strpos( $key, 'oidc_nonce_' ) === 0 )  { return 1; }
@@ -1267,7 +1267,8 @@ class AuthTest extends WpTestCase {
             return $default;
         } );
 
-        new TestableOIDCAuth();
+        $auth = new TestableOIDCAuth();
+        unset( $auth );
         $this->assertTrue( $filter_called );
     }
 

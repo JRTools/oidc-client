@@ -316,7 +316,7 @@ class JwtHelperTest extends WpTestCase {
         if ( ! function_exists( 'openssl_pkey_new' ) ) {
             $this->markTestSkipped( 'OpenSSL nicht verfügbar.' );
         }
-        $private_key = openssl_pkey_new( array( 'private_key_bits' => 512, 'private_key_type' => OPENSSL_KEYTYPE_RSA ) );
+        $private_key = openssl_pkey_new( array( 'private_key_bits' => 2048, 'private_key_type' => OPENSSL_KEYTYPE_RSA ) );
         $details     = openssl_pkey_get_details( $private_key );
         $jwk = array(
             'kty' => 'RSA',
@@ -337,7 +337,7 @@ class JwtHelperTest extends WpTestCase {
     public function test_verify_signature_sig_decode_failed_returns_wp_error() {
         Functions\when( '__' )->returnArg();
         Functions\when( 'sanitize_text_field' )->returnArg();
-        list( $private_key, $jwk ) = $this->generateTestRsaJwk();
+        list( $_, $jwk ) = $this->generateTestRsaJwk();
         $this->mockJwks( array( 'keys' => array( $jwk ) ) );
 
         // '!!!' ist kein gültiges Base64 → base64url_decode gibt false zurück
@@ -354,7 +354,7 @@ class JwtHelperTest extends WpTestCase {
     public function test_verify_signature_invalid_sig_returns_wp_error() {
         Functions\when( '__' )->returnArg();
         Functions\when( 'sanitize_text_field' )->returnArg();
-        list( $private_key, $jwk ) = $this->generateTestRsaJwk();
+        list( $_, $jwk ) = $this->generateTestRsaJwk();
         $this->mockJwks( array( 'keys' => array( $jwk ) ) );
 
         $header_b64  = rtrim( strtr( base64_encode( json_encode( array( 'alg' => 'RS256' ) ) ), '+/', '-_' ), '=' );

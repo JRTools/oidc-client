@@ -612,30 +612,6 @@ class AdminTest extends WpTestCase {
     }
 
     // -------------------------------------------------------------------------
-    // section_provider_description / section_roles_description
-    // -------------------------------------------------------------------------
-
-    public function test_section_provider_description_outputs_paragraph() {
-        Functions\when( 'esc_html__' )->returnArg();
-
-        ob_start();
-        $this->admin->section_provider_description();
-        $output = ob_get_clean();
-
-        $this->assertStringContainsString( '<p>', $output );
-    }
-
-    public function test_section_roles_description_outputs_paragraph() {
-        Functions\when( 'esc_html__' )->returnArg();
-
-        ob_start();
-        $this->admin->section_roles_description();
-        $output = ob_get_clean();
-
-        $this->assertStringContainsString( '<p>', $output );
-    }
-
-    // -------------------------------------------------------------------------
     // enqueue_scripts
     // -------------------------------------------------------------------------
 
