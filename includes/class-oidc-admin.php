@@ -577,14 +577,18 @@ class OIDC_Admin {
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ( $mapping as $claim_value => $wp_role ) : ?>
+                <?php foreach ( $mapping as $claim_value => $wp_role ) :
+                    $row_id = 'rm-row-' . sanitize_key( $claim_value );
+                ?>
                 <tr>
                     <td>
-                        <input type="text" class="rm-claim regular-text"
+                        <label for="<?php echo esc_attr( $row_id . '-claim' ); ?>" class="screen-reader-text"><?php esc_html_e( 'Claim-Wert', 'oidc-client' ); ?></label>
+                        <input type="text" id="<?php echo esc_attr( $row_id . '-claim' ); ?>" class="rm-claim regular-text"
                                value="<?php echo esc_attr( $claim_value ); ?>" />
                     </td>
                     <td>
-                        <select class="rm-role">
+                        <label for="<?php echo esc_attr( $row_id . '-role' ); ?>" class="screen-reader-text"><?php esc_html_e( 'WordPress-Rolle', 'oidc-client' ); ?></label>
+                        <select id="<?php echo esc_attr( $row_id . '-role' ); ?>" class="rm-role">
                             <?php foreach ( $wp_roles as $role_key => $role_data ) : ?>
                             <option value="<?php echo esc_attr( $role_key ); ?>"
                                 <?php selected( $wp_role, $role_key ); ?>>

@@ -50,8 +50,39 @@ class OIDC_Logout {
         register_rest_route( 'oidc-client/v1', '/backchannel-logout', array(
             'methods'             => 'POST',
             'callback'            => array( $this, 'handle_backchannel_logout' ),
-            'permission_callback' => '__return_true',
+            'permission_callback' => array( $this, 'backchannel_logout_permission_callback' ),
         ) );
+    }
+
+    /**
+     * Permission-Callback für den Backchannel-Logout-Endpoint.
+     *
+     * Implementiert Rate-Limiting: max 10 Requests pro Minute pro IP.
+     *
+     * @return true|WP_Error
+     */
+    public function backchannel_logout_permission_callback() {
+        $ip            = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- REMOTE_ADDR wird vom Webserver gesetzt, nicht vom Client manipulierbar.
+        $transient_key = 'oidc_rl_' . md5( $ip ); // phpcs:ignore -- md5 used as cache key, not for security
+        $max_requests  = 10;
+
+        $count = get_transient( $transient_key );
+
+        if ( false === $count ) {
+            set_transient( $transient_key, 1, 60 );
+            return true;
+        }
+
+        if ( (int) $count >= $max_requests ) {
+            return new WP_Error(
+                'rate_limit_exceeded',
+                'Too many backchannel logout requests.',
+                array( 'status' => 429 )
+            );
+        }
+
+        set_transient( $transient_key, (int) $count + 1, 60 );
+        return true;
     }
 
     /**
@@ -175,7 +206,7 @@ class OIDC_Logout {
         // JTI Replay-Schutz (atomar: Cache zuerst, Transient als Fallback für Cache-Neustart)
         if ( isset( $claims['jti'] ) ) {
             $jti     = sanitize_text_field( $claims['jti'] );
-            $jti_key = 'oidc_jti_' . md5( $jti );
+            $jti_key = 'oidc_jti_' . md5( $jti ); // phpcs:ignore -- md5 as cache key, not for security
             $exp     = isset( $claims['exp'] ) ? max( 0, (int) $claims['exp'] - $now ) : DAY_IN_SECONDS;
 
             // wp_cache_add ist atomar: gibt false wenn Schlüssel bereits existiert.
@@ -192,27 +223,4 @@ class OIDC_Logout {
         return $claims;
     }
 
-    // -------------------------------------------------------------------------
-    // F4: Backchannel-Logout – Rate-Limiting per IP
-    // -------------------------------------------------------------------------
-
-    /**
-     * Permission-Callback für den Backchannel-Logout-Endpoint.
-     * Erlaubt maximal 10 Requests pro IP pro Minute.
-     *
-     * @return true|WP_Error
-     */
-    public function backchannel_logout_permission_callback() {
-        $ip      = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
-        $key     = 'oidc_rl_' . md5( $ip );
-        $count   = (int) get_transient( $key );
-        $limit   = 10;
-
-        if ( $count >= $limit ) {
-            return new WP_Error( 'rate_limit_exceeded', 'Rate limit exceeded.', array( 'status' => 429 ) );
-        }
-
-        set_transient( $key, $count + 1, 60 );
-        return true;
-    }
 }

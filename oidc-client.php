@@ -24,10 +24,12 @@ define( 'OIDC_CLIENT_VERSION', '1.0.0' );
 define( 'OIDC_CLIENT_DIR',     plugin_dir_path( __FILE__ ) );
 define( 'OIDC_CLIENT_URL',     plugin_dir_url( __FILE__ ) );
 
-// Activation Hook – Datenbanktabelle anlegen
+// Activation Hook – Datenbanktabelle anlegen und sichere Standardwerte setzen
 register_activation_hook( __FILE__, function () {
     require_once plugin_dir_path( __FILE__ ) . 'includes/class-oidc-log.php';
     OIDC_Log::install();
+    // Token-Verschlüsselung standardmäßig aktivieren (add_option überschreibt keine bestehenden Werte).
+    add_option( 'oidc_token_encryption', '1' );
 } );
 
 require_once OIDC_CLIENT_DIR . 'includes/class-oidc-jwk-helper.php';
