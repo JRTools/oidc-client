@@ -254,7 +254,34 @@ class ProfileTest extends WpTestCase {
         Functions\when( 'wp_unslash' )->returnArg();
         Functions\when( 'wp_verify_nonce' )->justReturn( true );
         Functions\when( 'get_current_user_id' )->justReturn( 7 );
-        Functions\expect( 'set_transient' )->once()->with( 'oidc_link_pending_7', 1, 300 );
+        Functions\when( 'get_user_meta' )->justReturn( '' ); // kein bestehender Subject
+        Functions\expect( 'set_transient' )->once()->with(
+            'oidc_link_pending_7',
+            array( 'pending' => true, 'sub' => '' ),
+            300
+        );
+        Functions\expect( 'do_action' )->once()->with( 'oidc_initiate_login', array( 'prompt' => 'login' ) );
+
+        $profile = new OIDC_Profile();
+        $profile->initiate_link_login();
+        $this->addToAssertionCount( 1 );
+    }
+
+    public function test_initiate_link_login_stores_existing_subject_in_transient() {
+        $_GET['oidc_link']       = '1';
+        $_GET['oidc_link_nonce'] = 'valid-nonce';
+
+        Functions\when( 'is_user_logged_in' )->justReturn( true );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_unslash' )->returnArg();
+        Functions\when( 'wp_verify_nonce' )->justReturn( true );
+        Functions\when( 'get_current_user_id' )->justReturn( 7 );
+        Functions\when( 'get_user_meta' )->justReturn( 'existing-sub-abc' );
+        Functions\expect( 'set_transient' )->once()->with(
+            'oidc_link_pending_7',
+            array( 'pending' => true, 'sub' => 'existing-sub-abc' ),
+            300
+        );
         Functions\expect( 'do_action' )->once()->with( 'oidc_initiate_login', array( 'prompt' => 'login' ) );
 
         $profile = new OIDC_Profile();
@@ -476,5 +503,123 @@ class ProfileTest extends WpTestCase {
 
         $this->assertStringContainsString( 'dashicons-no-alt', $output );
         $this->assertStringNotContainsString( 'button-primary', $output );
+    }
+
+    // -------------------------------------------------------------------------
+    // filter_avatar_url (verschoben aus AuthTest, SA-1 Refactoring)
+    // -------------------------------------------------------------------------
+
+    public function test_filter_avatar_url_numeric_id_with_avatar() {
+        $user     = new WP_User();
+        $user->ID = 5;
+        Functions\when( 'get_user_by' )->justReturn( $user );
+        Functions\when( 'get_user_meta' )->justReturn( 'https://example.com/avatar.jpg' );
+        Functions\when( 'esc_url' )->returnArg();
+
+        $profile = new OIDC_Profile();
+        $result  = $profile->filter_avatar_url( 'fallback.jpg', 5, array() );
+        $this->assertSame( 'https://example.com/avatar.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_numeric_id_no_avatar_returns_original() {
+        $user     = new WP_User();
+        $user->ID = 5;
+        Functions\when( 'get_user_by' )->justReturn( $user );
+        Functions\when( 'get_user_meta' )->justReturn( '' );
+
+        $profile = new OIDC_Profile();
+        $result  = $profile->filter_avatar_url( 'fallback.jpg', 5, array() );
+        $this->assertSame( 'fallback.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_string_email_with_avatar() {
+        $user     = new WP_User();
+        $user->ID = 7;
+        Functions\when( 'get_user_by' )->justReturn( $user );
+        Functions\when( 'get_user_meta' )->justReturn( 'https://cdn.example.com/pic.png' );
+        Functions\when( 'esc_url' )->returnArg();
+
+        $profile = new OIDC_Profile();
+        $result  = $profile->filter_avatar_url( 'default.jpg', 'user@example.com', array() );
+        $this->assertSame( 'https://cdn.example.com/pic.png', $result );
+    }
+
+    public function test_filter_avatar_url_wp_user_object_with_avatar() {
+        $user     = new WP_User();
+        $user->ID = 9;
+        Functions\when( 'get_user_meta' )->justReturn( 'https://example.com/oidc-avatar.jpg' );
+        Functions\when( 'esc_url' )->returnArg();
+
+        $profile = new OIDC_Profile();
+        $result  = $profile->filter_avatar_url( 'fallback.jpg', $user, array() );
+        $this->assertSame( 'https://example.com/oidc-avatar.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_wp_user_no_avatar_returns_original() {
+        $user     = new WP_User();
+        $user->ID = 9;
+        Functions\when( 'get_user_meta' )->justReturn( '' );
+
+        $profile = new OIDC_Profile();
+        $result  = $profile->filter_avatar_url( 'original.jpg', $user, array() );
+        $this->assertSame( 'original.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_wp_post_with_avatar() {
+        $post = new WP_Post( 3 );
+        $user     = new WP_User();
+        $user->ID = 3;
+        Functions\when( 'get_user_by' )->justReturn( $user );
+        Functions\when( 'get_user_meta' )->justReturn( 'https://example.com/post-author.jpg' );
+        Functions\when( 'esc_url' )->returnArg();
+
+        $profile = new OIDC_Profile();
+        $result  = $profile->filter_avatar_url( 'fallback.jpg', $post, array() );
+        $this->assertSame( 'https://example.com/post-author.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_wp_comment_with_avatar() {
+        $comment = new WP_Comment( 'commenter@example.com' );
+        $user     = new WP_User();
+        $user->ID = 11;
+        Functions\when( 'get_user_by' )->justReturn( $user );
+        Functions\when( 'get_user_meta' )->justReturn( 'https://example.com/commenter.jpg' );
+        Functions\when( 'esc_url' )->returnArg();
+
+        $profile = new OIDC_Profile();
+        $result  = $profile->filter_avatar_url( 'fallback.jpg', $comment, array() );
+        $this->assertSame( 'https://example.com/commenter.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_unknown_type_returns_original() {
+        $profile = new OIDC_Profile();
+        $result  = $profile->filter_avatar_url( 'original.jpg', new stdClass(), array() );
+        $this->assertSame( 'original.jpg', $result );
+    }
+
+    public function test_filter_avatar_url_user_not_found_returns_original() {
+        Functions\when( 'get_user_by' )->justReturn( false );
+
+        $profile = new OIDC_Profile();
+        $result  = $profile->filter_avatar_url( 'original.jpg', 99, array() );
+        $this->assertSame( 'original.jpg', $result );
+    }
+
+    public function test_constructor_registers_avatar_filter_when_sync_avatar_enabled() {
+        $filter_called = false;
+        Functions\when( 'add_action' )->justReturn( null );
+        Functions\when( 'add_filter' )->alias( function ( $hook ) use ( &$filter_called ) {
+            if ( $hook === 'get_avatar_url' ) {
+                $filter_called = true;
+            }
+        } );
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_sync_avatar' ) { return '1'; }
+            return $default;
+        } );
+
+        $profile = new OIDC_Profile();
+        unset( $profile );
+        $this->assertTrue( $filter_called );
     }
 }

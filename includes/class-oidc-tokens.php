@@ -73,55 +73,73 @@ class OIDC_Tokens {
      * @return string|WP_Error neuer Access-Token
      */
     private function refresh_access_token( $user_id ) {
-        $refresh_token = $this->decrypt( get_user_meta( $user_id, '_oidc_refresh_token', true ) );
+        $lock_key = 'oidc_refresh_lock_' . $user_id;
 
-        if ( empty( $refresh_token ) ) {
-            return new WP_Error( 'no_refresh_token', __( 'Kein Refresh-Token vorhanden.', 'oidc-client' ) );
+        // Atomares Lock-Setzen: gibt false wenn Lock bereits existiert.
+        if ( false === wp_cache_add( $lock_key, 1, 'oidc', 15 ) ) {
+            // Anderer Request refresht gerade — kurz warten und neues Token laden.
+            usleep( 500000 );
+            $token   = $this->decrypt( get_user_meta( $user_id, '_oidc_access_token', true ) );
+            $expires = (int) get_user_meta( $user_id, '_oidc_access_token_expires', true );
+            if ( $token && $expires > time() ) {
+                return $token;
+            }
+            return new WP_Error( 'refresh_locked', __( 'Token-Refresh durch anderen Request fehlgeschlagen.', 'oidc-client' ) );
         }
 
-        $token_ep      = get_option( 'oidc_token_endpoint', '' );
-        $client_id     = get_option( 'oidc_client_id', '' );
-        $client_secret = get_option( 'oidc_client_secret', '' );
-        $auth_method   = get_option( 'oidc_token_auth_method', 'client_secret_post' );
+        try {
+            $refresh_token = $this->decrypt( get_user_meta( $user_id, '_oidc_refresh_token', true ) );
 
-        $body = array(
-            'grant_type'    => 'refresh_token',
-            'refresh_token' => $refresh_token,
-            'client_id'     => $client_id,
-        );
+            if ( empty( $refresh_token ) ) {
+                return new WP_Error( 'no_refresh_token', __( 'Kein Refresh-Token vorhanden.', 'oidc-client' ) );
+            }
 
-        $headers = array( 'Content-Type' => 'application/x-www-form-urlencoded' );
+            $token_ep      = get_option( 'oidc_token_endpoint', '' );
+            $client_id     = get_option( 'oidc_client_id', '' );
+            $client_secret = get_option( 'oidc_client_secret', '' );
+            $auth_method   = get_option( 'oidc_token_auth_method', 'client_secret_post' );
 
-        if ( 'client_secret_basic' === $auth_method ) {
-            $headers['Authorization'] = 'Basic ' . base64_encode( $client_id . ':' . $client_secret );
-        } else {
-            $body['client_secret'] = $client_secret;
+            $body = array(
+                'grant_type'    => 'refresh_token',
+                'refresh_token' => $refresh_token,
+                'client_id'     => $client_id,
+            );
+
+            $headers = array( 'Content-Type' => 'application/x-www-form-urlencoded' );
+
+            if ( 'client_secret_basic' === $auth_method ) {
+                $headers['Authorization'] = 'Basic ' . base64_encode( $client_id . ':' . $client_secret );
+            } else {
+                $body['client_secret'] = $client_secret;
+            }
+
+            $response = wp_remote_post( $token_ep, array(
+                'timeout'   => 15,
+                'sslverify' => true,
+                'headers'   => $headers,
+                'body'      => $body,
+            ) );
+
+            if ( is_wp_error( $response ) ) {
+                return $response;
+            }
+
+            $data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+            if ( isset( $data['error'] ) ) {
+                return new WP_Error( 'refresh_error', sanitize_text_field( $data['error_description'] ?? $data['error'] ) );
+            }
+
+            if ( empty( $data['access_token'] ) ) {
+                return new WP_Error( 'refresh_failed', __( 'Token-Refresh fehlgeschlagen.', 'oidc-client' ) );
+            }
+
+            $this->store_tokens( $user_id, $data );
+
+            return $data['access_token'];
+        } finally {
+            wp_cache_delete( $lock_key, 'oidc' );
         }
-
-        $response = wp_remote_post( $token_ep, array(
-            'timeout'   => 15,
-            'sslverify' => true,
-            'headers'   => $headers,
-            'body'      => $body,
-        ) );
-
-        if ( is_wp_error( $response ) ) {
-            return $response;
-        }
-
-        $data = json_decode( wp_remote_retrieve_body( $response ), true );
-
-        if ( isset( $data['error'] ) ) {
-            return new WP_Error( 'refresh_error', sanitize_text_field( $data['error_description'] ?? $data['error'] ) );
-        }
-
-        if ( empty( $data['access_token'] ) ) {
-            return new WP_Error( 'refresh_failed', __( 'Token-Refresh fehlgeschlagen.', 'oidc-client' ) );
-        }
-
-        $this->store_tokens( $user_id, $data );
-
-        return $data['access_token'];
     }
 
     /**
@@ -158,7 +176,7 @@ class OIDC_Tokens {
      * @return string
      */
     private function encrypt( $plaintext ) {
-        if ( get_option( 'oidc_token_encryption', '' ) !== '1' ) {
+        if ( get_option( 'oidc_token_encryption', '1' ) !== '1' ) {
             return $plaintext;
         }
         if ( ! function_exists( 'openssl_encrypt' ) || empty( $plaintext ) ) {

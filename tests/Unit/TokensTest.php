@@ -288,7 +288,7 @@ class TokensTest extends WpTestCase {
 
     public function test_get_valid_access_token_returns_error_when_no_refresh_token() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $default; // oidc_token_encryption = ''
+            return $default; // Testet explizit den deaktivierten Verschlüsselungs-Pfad
         } );
 
         Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
@@ -397,6 +397,56 @@ class TokensTest extends WpTestCase {
         $result = $tokens->get_valid_access_token( 1 );
 
         $this->assertSame( 'new-access-token', $result );
+    }
+
+    public function test_refresh_lock_contention_returns_reloaded_token() {
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( '__' )->returnArg();
+
+        // Erster Aufruf: abgelaufenes Token → trigger refresh.
+        // wp_cache_add gibt false → Lock bereits gehalten.
+        Functions\when( 'wp_cache_add' )->justReturn( false );
+
+        // Nach dem Warten: frisches Token in user_meta.
+        Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
+            if ( $meta_key === '_oidc_access_token' ) {
+                return 'freshly-refreshed-token';
+            }
+            if ( $meta_key === '_oidc_access_token_expires' ) {
+                return (string) ( time() + 3600 );
+            }
+            return '';
+        } );
+
+        $tokens = new OIDC_Tokens();
+        $result = $tokens->get_valid_access_token( 1 );
+
+        $this->assertSame( 'freshly-refreshed-token', $result );
+    }
+
+    public function test_refresh_lock_contention_returns_error_when_still_expired() {
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( '__' )->returnArg();
+
+        // wp_cache_add gibt false → Lock bereits gehalten.
+        Functions\when( 'wp_cache_add' )->justReturn( false );
+
+        // Nach dem Warten: Token immer noch abgelaufen.
+        Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
+            if ( $meta_key === '_oidc_access_token' ) {
+                return '';
+            }
+            if ( $meta_key === '_oidc_access_token_expires' ) {
+                return '0';
+            }
+            return '';
+        } );
+
+        $tokens = new OIDC_Tokens();
+        $result = $tokens->get_valid_access_token( 1 );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'refresh_locked', $result->get_error_code() );
     }
 
     public function test_get_valid_access_token_refreshes_with_client_secret_basic() {
