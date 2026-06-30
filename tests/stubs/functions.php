@@ -34,3 +34,8 @@ if ( ! function_exists( 'apply_filters' ) ) {
         return $value;
     }
 }
+if ( ! function_exists( 'sanitize_key' ) ) {
+    function sanitize_key( $key = '' ) {
+        return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( $key ) );
+    }
+}

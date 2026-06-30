@@ -305,6 +305,8 @@ class TokensTest extends WpTestCase {
         } );
 
         Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         $tokens = new OIDC_Tokens();
         $result = $tokens->get_valid_access_token( 1 );
@@ -327,6 +329,8 @@ class TokensTest extends WpTestCase {
         Functions\when( 'get_option' )->justReturn( '' );
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
         Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         $http_error = new WP_Error( 'http_request_failed', 'Connection refused' );
         Functions\when( 'wp_remote_post' )->justReturn( $http_error );
@@ -346,6 +350,8 @@ class TokensTest extends WpTestCase {
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
         Functions\when( '__' )->returnArg();
         Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         Functions\when( 'wp_remote_post' )->justReturn( array( 'response' => array( 'code' => 400 ) ) );
         Functions\when( 'is_wp_error' )->alias( function ( $thing ) { return $thing instanceof WP_Error; } );
@@ -364,6 +370,8 @@ class TokensTest extends WpTestCase {
         Functions\when( 'get_option' )->justReturn( '' );
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
         Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         Functions\when( 'wp_remote_post' )->justReturn( array( 'response' => array( 'code' => 200 ) ) );
         Functions\when( 'is_wp_error' )->alias( function ( $thing ) { return $thing instanceof WP_Error; } );
@@ -386,6 +394,8 @@ class TokensTest extends WpTestCase {
         } );
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
         Functions\when( 'update_user_meta' )->justReturn( true );
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         Functions\when( 'wp_remote_post' )->justReturn( array( 'response' => array( 'code' => 200 ) ) );
         Functions\when( 'is_wp_error' )->alias( function ( $thing ) { return $thing instanceof WP_Error; } );
@@ -459,6 +469,8 @@ class TokensTest extends WpTestCase {
         } );
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
         Functions\when( 'update_user_meta' )->justReturn( true );
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         $captured_args = null;
         Functions\when( 'wp_remote_post' )->alias( function ( $_url, $args ) use ( &$captured_args ) {

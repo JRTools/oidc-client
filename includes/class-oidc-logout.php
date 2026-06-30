@@ -172,16 +172,47 @@ class OIDC_Logout {
             return new WP_Error( 'logout_token_subject', 'Logout-Token enthält weder sub noch sid.' );
         }
 
-        // JTI Replay-Schutz
+        // JTI Replay-Schutz (atomar: Cache zuerst, Transient als Fallback für Cache-Neustart)
         if ( isset( $claims['jti'] ) ) {
             $jti     = sanitize_text_field( $claims['jti'] );
             $jti_key = 'oidc_jti_' . md5( $jti );
+            $exp     = isset( $claims['exp'] ) ? max( 0, (int) $claims['exp'] - $now ) : DAY_IN_SECONDS;
+
+            // wp_cache_add ist atomar: gibt false wenn Schlüssel bereits existiert.
+            if ( false === wp_cache_add( $jti_key, 1, 'oidc_jti', $exp ) ) {
+                return new WP_Error( 'logout_token_replay', 'Logout-Token wurde bereits verwendet (Replay).' );
+            }
+            // Transient als persistenten Fallback setzen (überlebt Cache-Neustart).
             if ( false !== get_transient( $jti_key ) ) {
                 return new WP_Error( 'logout_token_replay', 'Logout-Token wurde bereits verwendet (Replay).' );
             }
-            set_transient( $jti_key, 1, DAY_IN_SECONDS );
+            set_transient( $jti_key, 1, $exp );
         }
 
         return $claims;
+    }
+
+    // -------------------------------------------------------------------------
+    // F4: Backchannel-Logout – Rate-Limiting per IP
+    // -------------------------------------------------------------------------
+
+    /**
+     * Permission-Callback für den Backchannel-Logout-Endpoint.
+     * Erlaubt maximal 10 Requests pro IP pro Minute.
+     *
+     * @return true|WP_Error
+     */
+    public function backchannel_logout_permission_callback() {
+        $ip      = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput
+        $key     = 'oidc_rl_' . md5( $ip );
+        $count   = (int) get_transient( $key );
+        $limit   = 10;
+
+        if ( $count >= $limit ) {
+            return new WP_Error( 'rate_limit_exceeded', 'Rate limit exceeded.', array( 'status' => 429 ) );
+        }
+
+        set_transient( $key, $count + 1, 60 );
+        return true;
     }
 }

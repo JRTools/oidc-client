@@ -495,6 +495,8 @@ class AuthTest extends WpTestCase {
         $GLOBALS['wpdb'] = new class { public $prefix = 'wp_'; public function insert( $t, $d, $f ) {} };
 
         Functions\when( 'get_transient' )->justReturn( false );
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
         Functions\when( 'get_user_meta' )->alias( function ( $id, $key, $single ) {
             if ( $key === '_oidc_subject' ) { return 'user-sub'; }
             if ( $key === '_oidc_access_token_expires' ) { return time() - 100; }
