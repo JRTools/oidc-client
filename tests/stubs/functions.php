@@ -39,3 +39,13 @@ if ( ! function_exists( 'sanitize_key' ) ) {
         return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( $key ) );
     }
 }
+if ( ! function_exists( 'wp_unslash' ) ) {
+    function wp_unslash( $value = '' ) {
+        return is_array( $value ) ? array_map( 'wp_unslash', $value ) : stripslashes( (string) $value );
+    }
+}
+if ( ! function_exists( 'sanitize_text_field' ) ) {
+    function sanitize_text_field( $str = '' ) {
+        return trim( strip_tags( (string) $str ) );
+    }
+}
