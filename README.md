@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/johannesroesch/oidc-client/actions/workflows/ci.yml/badge.svg)](https://github.com/johannesroesch/oidc-client/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/johannesroesch/oidc-client/branch/main/graph/badge.svg)](https://codecov.io/gh/johannesroesch/oidc-client)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=johannesroesch_oidc-client&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=johannesroesch_oidc-client)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=johannesroesch_oidc-client&metric=bugs)](https://sonarcloud.io/summary/new_code?id=johannesroesch_oidc-client)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=johannesroesch_oidc-client&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=johannesroesch_oidc-client)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=johannesroesch_oidc-client2&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=johannesroesch_oidc-client2)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=johannesroesch_oidc-client2&metric=bugs)](https://sonarcloud.io/summary/new_code?id=johannesroesch_oidc-client2)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=johannesroesch_oidc-client2&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=johannesroesch_oidc-client2)
 [![Latest Release](https://img.shields.io/github/v/release/johannesroesch/oidc-client)](https://github.com/johannesroesch/oidc-client/releases/latest)
 [![License: GPL v2](https://img.shields.io/badge/license-GPL--2.0%2B-blue)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777bb4)](https://www.php.net)
