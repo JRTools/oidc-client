@@ -18,6 +18,11 @@ class OIDC_Profile {
         add_action( 'admin_post_oidc_unlink',     array( $this, 'handle_unlink' ) );
         add_action( 'user_profile_update_errors', array( $this, 'maybe_lock_email' ),    10, 3 );
         add_action( 'user_profile_update_errors', array( $this, 'maybe_lock_password' ), 10, 3 );
+
+        // F6: Avatar-Filter nur laden wenn aktiviert
+        if ( get_option( 'oidc_sync_avatar', '' ) === '1' ) {
+            add_filter( 'get_avatar_url', array( $this, 'filter_avatar_url' ), 10, 3 );
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -191,8 +196,12 @@ class OIDC_Profile {
             wp_die( esc_html__( 'Sicherheitstoken ungültig.', 'oidc-client' ) );
         }
 
-        $user_id = get_current_user_id();
-        set_transient( 'oidc_link_pending_' . $user_id, 1, 5 * MINUTE_IN_SECONDS );
+        $user_id         = get_current_user_id();
+        $existing_subject = get_user_meta( $user_id, '_oidc_subject', true );
+        set_transient( 'oidc_link_pending_' . $user_id, array(
+            'pending' => true,
+            'sub'     => $existing_subject ? $existing_subject : '',
+        ), 5 * MINUTE_IN_SECONDS );
 
         do_action( 'oidc_initiate_login', array( 'prompt' => 'login' ) );
     }
@@ -217,5 +226,42 @@ class OIDC_Profile {
 
         wp_safe_redirect( get_edit_profile_url( $user_id ) . '#oidc-unlinked' );
         exit;
+    }
+
+    // -------------------------------------------------------------------------
+    // F6: Avatar-URL-Filter
+    // -------------------------------------------------------------------------
+
+    /**
+     * OIDC-Avatar-URL für Benutzer zurückgeben, falls gespeichert.
+     *
+     * @param string $url         Aktuelle Avatar-URL.
+     * @param mixed  $id_or_email User-ID, E-Mail, WP_User, WP_Post oder WP_Comment.
+     * @param array  $_args       Zusätzliche Argumente (nicht verwendet).
+     * @return string Avatar-URL.
+     */
+    public function filter_avatar_url( $url, $id_or_email, $_args ) {
+        $user = false;
+
+        if ( is_numeric( $id_or_email ) ) {
+            $user = get_user_by( 'id', (int) $id_or_email );
+        } elseif ( is_string( $id_or_email ) ) {
+            $user = get_user_by( 'email', $id_or_email );
+        } elseif ( $id_or_email instanceof WP_User ) {
+            $user = $id_or_email;
+        } elseif ( $id_or_email instanceof WP_Post ) {
+            $user = get_user_by( 'id', (int) $id_or_email->post_author );
+        } elseif ( $id_or_email instanceof WP_Comment ) {
+            $user = get_user_by( 'email', $id_or_email->comment_author_email );
+        }
+
+        if ( $user ) {
+            $avatar_url = get_user_meta( $user->ID, '_oidc_avatar_url', true );
+            if ( ! empty( $avatar_url ) ) {
+                return esc_url( $avatar_url );
+            }
+        }
+
+        return $url;
     }
 }

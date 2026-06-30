@@ -288,7 +288,7 @@ class TokensTest extends WpTestCase {
 
     public function test_get_valid_access_token_returns_error_when_no_refresh_token() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $default; // oidc_token_encryption = ''
+            return $default; // Testet explizit den deaktivierten Verschlüsselungs-Pfad
         } );
 
         Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
@@ -305,6 +305,8 @@ class TokensTest extends WpTestCase {
         } );
 
         Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         $tokens = new OIDC_Tokens();
         $result = $tokens->get_valid_access_token( 1 );
@@ -327,6 +329,8 @@ class TokensTest extends WpTestCase {
         Functions\when( 'get_option' )->justReturn( '' );
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
         Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         $http_error = new WP_Error( 'http_request_failed', 'Connection refused' );
         Functions\when( 'wp_remote_post' )->justReturn( $http_error );
@@ -346,6 +350,8 @@ class TokensTest extends WpTestCase {
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
         Functions\when( '__' )->returnArg();
         Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         Functions\when( 'wp_remote_post' )->justReturn( array( 'response' => array( 'code' => 400 ) ) );
         Functions\when( 'is_wp_error' )->alias( function ( $thing ) { return $thing instanceof WP_Error; } );
@@ -364,6 +370,8 @@ class TokensTest extends WpTestCase {
         Functions\when( 'get_option' )->justReturn( '' );
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
         Functions\when( '__' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         Functions\when( 'wp_remote_post' )->justReturn( array( 'response' => array( 'code' => 200 ) ) );
         Functions\when( 'is_wp_error' )->alias( function ( $thing ) { return $thing instanceof WP_Error; } );
@@ -386,6 +394,8 @@ class TokensTest extends WpTestCase {
         } );
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
         Functions\when( 'update_user_meta' )->justReturn( true );
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         Functions\when( 'wp_remote_post' )->justReturn( array( 'response' => array( 'code' => 200 ) ) );
         Functions\when( 'is_wp_error' )->alias( function ( $thing ) { return $thing instanceof WP_Error; } );
@@ -399,6 +409,56 @@ class TokensTest extends WpTestCase {
         $this->assertSame( 'new-access-token', $result );
     }
 
+    public function test_refresh_lock_contention_returns_reloaded_token() {
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( '__' )->returnArg();
+
+        // Erster Aufruf: abgelaufenes Token → trigger refresh.
+        // wp_cache_add gibt false → Lock bereits gehalten.
+        Functions\when( 'wp_cache_add' )->justReturn( false );
+
+        // Nach dem Warten: frisches Token in user_meta.
+        Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
+            if ( $meta_key === '_oidc_access_token' ) {
+                return 'freshly-refreshed-token';
+            }
+            if ( $meta_key === '_oidc_access_token_expires' ) {
+                return (string) ( time() + 3600 );
+            }
+            return '';
+        } );
+
+        $tokens = new OIDC_Tokens();
+        $result = $tokens->get_valid_access_token( 1 );
+
+        $this->assertSame( 'freshly-refreshed-token', $result );
+    }
+
+    public function test_refresh_lock_contention_returns_error_when_still_expired() {
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( '__' )->returnArg();
+
+        // wp_cache_add gibt false → Lock bereits gehalten.
+        Functions\when( 'wp_cache_add' )->justReturn( false );
+
+        // Nach dem Warten: Token immer noch abgelaufen.
+        Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
+            if ( $meta_key === '_oidc_access_token' ) {
+                return '';
+            }
+            if ( $meta_key === '_oidc_access_token_expires' ) {
+                return '0';
+            }
+            return '';
+        } );
+
+        $tokens = new OIDC_Tokens();
+        $result = $tokens->get_valid_access_token( 1 );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'refresh_locked', $result->get_error_code() );
+    }
+
     public function test_get_valid_access_token_refreshes_with_client_secret_basic() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
             if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
@@ -409,6 +469,8 @@ class TokensTest extends WpTestCase {
         } );
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
         Functions\when( 'update_user_meta' )->justReturn( true );
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
 
         $captured_args = null;
         Functions\when( 'wp_remote_post' )->alias( function ( $_url, $args ) use ( &$captured_args ) {

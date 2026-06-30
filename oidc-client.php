@@ -30,10 +30,13 @@ register_activation_hook( __FILE__, function () {
     OIDC_Log::install();
 } );
 
+require_once OIDC_CLIENT_DIR . 'includes/class-oidc-jwk-helper.php';
 require_once OIDC_CLIENT_DIR . 'includes/class-oidc-jwt-helper.php';
 require_once OIDC_CLIENT_DIR . 'includes/class-oidc-log.php';
 require_once OIDC_CLIENT_DIR . 'includes/class-oidc-tokens.php';
 require_once OIDC_CLIENT_DIR . 'includes/class-oidc-roles.php';
+require_once OIDC_CLIENT_DIR . 'includes/class-oidc-token-exchange.php';
+require_once OIDC_CLIENT_DIR . 'includes/class-oidc-user-manager.php';
 require_once OIDC_CLIENT_DIR . 'includes/class-oidc-logout.php';
 require_once OIDC_CLIENT_DIR . 'includes/class-oidc-profile.php';
 require_once OIDC_CLIENT_DIR . 'includes/class-oidc-admin.php';
@@ -41,11 +44,12 @@ require_once OIDC_CLIENT_DIR . 'includes/class-oidc-auth.php';
 require_once OIDC_CLIENT_DIR . 'includes/class-oidc-login.php';
 
 function oidc_client_init() {
-    new OIDC_Log();
-    new OIDC_Logout();
-    new OIDC_Profile();
-    new OIDC_Admin();
-    new OIDC_Auth();
-    new OIDC_Login();
+    // Instanzen registrieren ihre WordPress-Hooks im Konstruktor.
+    $GLOBALS['oidc_log']     = new OIDC_Log();
+    $GLOBALS['oidc_logout']  = new OIDC_Logout();
+    $GLOBALS['oidc_profile'] = new OIDC_Profile();
+    $GLOBALS['oidc_admin']   = new OIDC_Admin();
+    $GLOBALS['oidc_auth']    = new OIDC_Auth();
+    $GLOBALS['oidc_login']   = new OIDC_Login();
 }
 add_action( 'plugins_loaded', 'oidc_client_init' );

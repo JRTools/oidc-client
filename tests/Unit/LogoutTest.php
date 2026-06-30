@@ -228,7 +228,7 @@ class LogoutTest extends WpTestCase {
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->justReturn( '' );
         Functions\when( 'sanitize_text_field' )->returnArg();
-        Functions\when( 'get_transient' )->justReturn( 1 ); // bereits verwendet
+        Functions\when( 'wp_cache_add' )->justReturn( false ); // JTI bereits im Cache
 
         $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user123', 'iat' => time(), 'jti' => 'unique-jti-123', 'events' => self::EVENTS ) );
         $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
@@ -241,6 +241,7 @@ class LogoutTest extends WpTestCase {
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->justReturn( '' );
         Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
         Functions\when( 'get_transient' )->justReturn( false );
         Functions\when( 'set_transient' )->justReturn( true );
         Functions\when( 'get_users' )->justReturn( array() );
@@ -256,6 +257,7 @@ class LogoutTest extends WpTestCase {
         Functions\when( 'current_time' )->justReturn( '2026-01-01 12:00:00' );
         Functions\when( 'get_option' )->justReturn( '' );
         Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
         Functions\when( 'get_transient' )->justReturn( false );
         Functions\when( 'set_transient' )->justReturn( true );
         Functions\when( 'get_user_meta' )->justReturn( '' );
@@ -329,6 +331,7 @@ class LogoutTest extends WpTestCase {
             if ( $key === 'oidc_client_id' ) { return 'my-client'; }
             return $default;
         } );
+        Functions\when( 'wp_cache_add' )->justReturn( true );
         Functions\when( 'get_transient' )->justReturn( false );
         Functions\when( 'set_transient' )->justReturn( true );
         Functions\when( 'get_users' )->justReturn( array() );
@@ -348,5 +351,138 @@ class LogoutTest extends WpTestCase {
 
         $this->assertSame( 400, $response->status );
         $this->assertSame( 'logout_token_iat', $response->data['error'] );
+    }
+
+    // -------------------------------------------------------------------------
+    // JTI Replay-Schutz – atomares Check-and-Set
+    // -------------------------------------------------------------------------
+
+    public function test_jti_first_use_allowed_via_cache_add() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'get_transient' )->justReturn( false );
+        Functions\when( 'set_transient' )->justReturn( true );
+        Functions\when( 'get_users' )->justReturn( array() );
+
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user123', 'iat' => time(), 'jti' => 'fresh-jti-001', 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
+
+        $this->assertSame( 200, $response->status );
+    }
+
+    public function test_jti_replay_detected_by_cache_add() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( false );
+
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user123', 'iat' => time(), 'jti' => 'replayed-jti', 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
+
+        $this->assertSame( 400, $response->status );
+        $this->assertSame( 'logout_token_replay', $response->data['error'] );
+    }
+
+    public function test_jti_replay_detected_by_transient_fallback() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );  // Cache restarted, add succeeds.
+        Functions\when( 'get_transient' )->justReturn( 1 );    // But transient still holds the JTI.
+
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user123', 'iat' => time(), 'jti' => 'cache-restarted-jti', 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
+
+        $this->assertSame( 400, $response->status );
+        $this->assertSame( 'logout_token_replay', $response->data['error'] );
+    }
+
+    public function test_jti_uses_exp_claim_for_ttl() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'get_users' )->justReturn( array() );
+        Functions\when( 'get_transient' )->justReturn( false );
+
+        $exp = time() + 3600;
+
+        Functions\expect( 'wp_cache_add' )
+            ->once()
+            ->with( \Mockery::type( 'string' ), 1, 'oidc_jti', \Mockery::on( function ( $ttl ) {
+                // TTL sollte ~3600 sein (exp - time()), mit Toleranz für Testlaufzeit.
+                return $ttl > 3500 && $ttl <= 3600;
+            } ) )
+            ->andReturn( true );
+        Functions\expect( 'set_transient' )
+            ->once()
+            ->with( \Mockery::type( 'string' ), 1, \Mockery::on( function ( $ttl ) {
+                return $ttl > 3500 && $ttl <= 3600;
+            } ) )
+            ->andReturn( true );
+
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user123', 'iat' => time(), 'exp' => $exp, 'jti' => 'ttl-jti', 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
+
+        $this->assertSame( 200, $response->status );
+    }
+
+    // -------------------------------------------------------------------------
+    // backchannel_logout_permission_callback – Rate-Limiting
+    // -------------------------------------------------------------------------
+
+    public function test_permission_callback_allows_request_under_limit() {
+        Functions\when( 'get_transient' )->justReturn( false );
+        Functions\expect( 'set_transient' )
+            ->once()
+            ->with( \Mockery::type( 'string' ), 1, 60 )
+            ->andReturn( true );
+
+        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
+
+        $result = $this->logout->backchannel_logout_permission_callback();
+
+        $this->assertTrue( $result );
+    }
+
+    public function test_permission_callback_increments_counter_within_limit() {
+        Functions\when( 'get_transient' )->justReturn( 5 );
+        Functions\expect( 'set_transient' )
+            ->once()
+            ->with( \Mockery::type( 'string' ), 6, 60 )
+            ->andReturn( true );
+
+        $_SERVER['REMOTE_ADDR'] = '192.168.1.1';
+
+        $result = $this->logout->backchannel_logout_permission_callback();
+
+        $this->assertTrue( $result );
+    }
+
+    public function test_permission_callback_returns_error_when_rate_limit_exceeded() {
+        Functions\when( 'get_transient' )->justReturn( 10 );
+
+        $_SERVER['REMOTE_ADDR'] = '10.0.0.1';
+
+        $result = $this->logout->backchannel_logout_permission_callback();
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'rate_limit_exceeded', $result->get_error_code() );
+        $this->assertSame( 429, $result->data['status'] );
+    }
+
+    public function test_permission_callback_uses_fallback_ip_when_remote_addr_missing() {
+        Functions\when( 'get_transient' )->justReturn( false );
+        Functions\expect( 'set_transient' )
+            ->once()
+            ->with( 'oidc_rl_' . md5( '0.0.0.0' ), 1, 60 )
+            ->andReturn( true );
+
+        unset( $_SERVER['REMOTE_ADDR'] );
+
+        $result = $this->logout->backchannel_logout_permission_callback();
+
+        $this->assertTrue( $result );
     }
 }

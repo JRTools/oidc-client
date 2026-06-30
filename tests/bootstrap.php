@@ -142,9 +142,12 @@ if ( ! class_exists( 'FakeWpdb' ) ) {
 }
 
 // Plugin-Klassen laden
+require_once __DIR__ . '/../includes/class-oidc-jwk-helper.php';
 require_once __DIR__ . '/../includes/class-oidc-jwt-helper.php';
 require_once __DIR__ . '/../includes/class-oidc-tokens.php';
 require_once __DIR__ . '/../includes/class-oidc-roles.php';
+require_once __DIR__ . '/../includes/class-oidc-token-exchange.php';
+require_once __DIR__ . '/../includes/class-oidc-user-manager.php';
 require_once __DIR__ . '/../includes/class-oidc-admin.php';
 require_once __DIR__ . '/../includes/class-oidc-auth.php';
 require_once __DIR__ . '/../includes/class-oidc-log.php';
