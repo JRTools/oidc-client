@@ -577,9 +577,10 @@ class OIDC_Admin {
                 </tr>
             </thead>
             <tbody>
-                <?php foreach ( $mapping as $claim_value => $wp_role ) :
+                <?php
+                foreach ( $mapping as $claim_value => $wp_role ) :
                     $row_id = 'rm-row-' . sanitize_key( $claim_value );
-                ?>
+					?>
                 <tr>
                     <td>
                         <label for="<?php echo esc_attr( $row_id . '-claim' ); ?>" class="screen-reader-text"><?php esc_html_e( 'Claim-Wert', 'oidc-client' ); ?></label>

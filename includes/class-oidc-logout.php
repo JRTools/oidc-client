@@ -222,5 +222,4 @@ class OIDC_Logout {
 
         return $claims;
     }
-
 }
