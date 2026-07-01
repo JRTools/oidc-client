@@ -86,7 +86,6 @@ class OIDC_Admin {
             'oidc_debug_mode'             => array( $this, 'sanitize_checkbox' ),
             'oidc_create_user'            => array( $this, 'sanitize_checkbox' ),
             'oidc_default_role'           => 'sanitize_text_field',
-            // Erweiterte Optionen
             'oidc_enable_refresh'         => array( $this, 'sanitize_checkbox' ),
             'oidc_active_claim'           => 'sanitize_text_field',
             'oidc_sync_avatar'            => array( $this, 'sanitize_checkbox' ),
@@ -98,7 +97,6 @@ class OIDC_Admin {
             'oidc_lock_password'          => array( $this, 'sanitize_checkbox' ),
             'oidc_session_management'     => array( $this, 'sanitize_checkbox' ),
             'oidc_remember_me'            => 'sanitize_text_field',
-            // Rollen-Mapping
             'oidc_role_claim'             => 'sanitize_text_field',
             'oidc_role_mapping'           => array( $this, 'sanitize_role_mapping' ),
         );
@@ -111,6 +109,15 @@ class OIDC_Admin {
             );
         }
 
+        $this->register_provider_section();
+        $this->register_client_section();
+        $this->register_users_advanced_roles_sections();
+    }
+
+    /**
+     * Registriert Abschnitt 1: Provider-Felder.
+     */
+    private function register_provider_section() {
         // ----- Abschnitt 1: Provider -----
         add_settings_section(
             'oidc_section_provider',
@@ -154,7 +161,12 @@ class OIDC_Admin {
                 'description' => __( 'PKCE verwenden (empfohlen). Deaktivieren wenn der Provider kein PKCE unterstützt und „invalid_client"-Fehler auftreten.', 'oidc-client' ),
             )
         );
+    }
 
+    /**
+     * Registriert Abschnitt 2: Client-Felder.
+     */
+    private function register_client_section() {
         // ----- Abschnitt 2: Client -----
         add_settings_section( 'oidc_section_client', __( 'Client', 'oidc-client' ), null, 'oidc-client' );
 
@@ -173,7 +185,12 @@ class OIDC_Admin {
         );
         $this->add_field( 'oidc_redirect_uri', __( 'Redirect URI', 'oidc-client' ), array( $this, 'field_redirect_uri' ), 'oidc_section_client' );
         $this->add_field( 'oidc_token_auth_method', __( 'Token-Endpoint Authentifizierung', 'oidc-client' ), array( $this, 'field_token_auth_method' ), 'oidc_section_client' );
+    }
 
+    /**
+     * Registriert Abschnitt 3 (Benutzerverwaltung), 4 (Erweiterte Optionen) und 5 (Rollen-Mapping).
+     */
+    private function register_users_advanced_roles_sections() {
         // ----- Abschnitt 3: Benutzerverwaltung -----
         add_settings_section( 'oidc_section_users', __( 'Benutzerverwaltung', 'oidc-client' ), null, 'oidc-client' );
 
@@ -215,14 +232,14 @@ class OIDC_Admin {
             array( 'oidc_session_management', __( 'Session-Management', 'oidc-client' ), __( 'Session an Token-Ablauf binden: Bei jedem Request Token prüfen, Refresh versuchen, sonst ausloggen. Erfordert Token-Refresh.', 'oidc-client' ) ),
         ) as list( $option, $label, $desc ) ) {
             $this->add_field( $option, $label, array( $this, 'field_checkbox' ), 'oidc_section_advanced', array(
-			'option' => $option,
-			'description' => $desc,
+				'option'      => $option,
+				'description' => $desc,
 			) );
         }
 
         $this->add_field( 'oidc_active_claim', __( 'Active-Claim', 'oidc-client' ), array( $this, 'field_text' ), 'oidc_section_advanced', array(
-		'option' => 'oidc_active_claim',
-		'description' => __( 'Claim-Name der Aktivierung (z. B. „active" oder „email_verified"). Login wird verweigert wenn false/0.', 'oidc-client' ),
+			'option'      => 'oidc_active_claim',
+			'description' => __( 'Claim-Name der Aktivierung (z. B. „active" oder „email_verified"). Login wird verweigert wenn false/0.', 'oidc-client' ),
 		) );
         $this->add_field( 'oidc_button_icon_url', __( 'Button-Icon URL', 'oidc-client' ), array( $this, 'field_url' ), 'oidc_section_advanced', array( 'option' => 'oidc_button_icon_url' ) );
         $this->add_field( 'oidc_remember_me', __( 'Angemeldet bleiben', 'oidc-client' ), array( $this, 'field_remember_me' ), 'oidc_section_advanced' );
