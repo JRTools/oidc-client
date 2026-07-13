@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/JRTools/jrtools-openid-connect/actions/workflows/ci.yml/badge.svg)](https://github.com/JRTools/jrtools-openid-connect.php/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/JRTools/jrtools-openid-connect/branch/main/graph/badge.svg)](https://codecov.io/gh/JRTools/jrtools-openid-connect)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=JRTools_jrtools-openid-connect&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=JRTools_jrtools-openid-connect)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=JRTools_jrtools-openid-connect&metric=bugs)](https://sonarcloud.io/summary/new_code?id=JRTools_jrtools-openid-connect)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=JRTools_jrtools-openid-connect&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=JRTools_jrtools-openid-connect)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=jrtools-openid-connect&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jrtools-openid-connect)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=jrtools-openid-connect&metric=bugs)](https://sonarcloud.io/summary/new_code?id=jrtools-openid-connect)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=jrtools-openid-connect&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=jrtools-openid-connect)
 [![Latest Release](https://img.shields.io/github/v/release/JRTools/jrtools-openid-connect)](https://github.com/JRTools/jrtools-openid-connect/releases/latest)
 [![License: GPL v2](https://img.shields.io/badge/license-GPL--2.0%2B-blue)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777bb4)](https://www.php.net)
