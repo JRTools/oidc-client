@@ -1,7 +1,7 @@
 === OIDC Client ===
 Contributors: johannesroesch
 Tags: openid-connect, oauth2, sso, authentication, login
-Requires at least: 5.9
+Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.1
 Stable tag: 1.2.0

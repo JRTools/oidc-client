@@ -11,9 +11,14 @@ env:
 
 jobs:
   plugin-check:
-    name: WordPress Plugin Check
+    name: WordPress Plugin Check (WP ${{ matrix.wp }})
     runs-on: ubuntu-latest
     permissions: {}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        wp: ['6.7', '6.8', '6.9', '7.0']
 
     steps:
       - name: Checkout
@@ -23,6 +28,7 @@ jobs:
         uses: wordpress/plugin-check-action@98a1788320d0add90df2d8183934ecccbc4e05d2 # v1
         with:
           build-dir: './'
+          wp-version: ${{ matrix.wp }}
           exclude-directories: 'vendor,tests,.github,dist,bin'
           exclude-files: '.gitignore,.distignore,.phpcs.xml,composer.json,composer.lock,phpunit.xml,phpunit.xml.dist,phpstan.neon,infection.json5,sonar-project.properties,qodana.yaml,Makefile'
 

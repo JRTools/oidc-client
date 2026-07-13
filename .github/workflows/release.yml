@@ -52,6 +52,10 @@ jobs:
     permissions:
       contents: write
 
+    env:
+      WP_TESTED_UP_TO: '7.0'
+      WP_REQUIRES_AT_LEAST: '6.7'
+
     steps:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -75,6 +79,8 @@ jobs:
           sed -i "s/^\( \* Version:\s*\).*/\1${VERSION}/" oidc-client.php
           sed -i "s/^define( 'OIDC_CLIENT_VERSION', '[^']*' );/define( 'OIDC_CLIENT_VERSION', '${VERSION}' );/" oidc-client.php
           sed -i "s/^Stable tag:.*/Stable tag: ${VERSION}/" readme.txt
+          sed -i "s/^Tested up to:.*/Tested up to: ${WP_TESTED_UP_TO}/" readme.txt
+          sed -i "s/^Requires at least:.*/Requires at least: ${WP_REQUIRES_AT_LEAST}/" readme.txt
           sed -i "s/^define( 'OIDC_EXPECTED_VERSION', '[^']*' );/define( 'OIDC_EXPECTED_VERSION', '${VERSION}' );/" tests/Unit/PluginMainTest.php
 
       - name: Produktiv-Abhängigkeiten installieren
