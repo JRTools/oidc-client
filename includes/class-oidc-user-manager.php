@@ -48,6 +48,16 @@ class OIDC_User_Manager {
             return;
         }
 
+        /*
+         * Filter: oidc_userinfo
+         *
+         * Allows modification of the userinfo data returned by the provider
+         * before it is used to create or update the WordPress user.
+         *
+         * @param array $userinfo Userinfo claims from the provider.
+         */
+        $userinfo = apply_filters( 'oidc_userinfo', $userinfo );
+
         // Benutzer ausschließlich via Subject-Claim suchen.
         $users = get_users( array(
             'meta_key'   => '_oidc_subject', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
@@ -87,6 +97,29 @@ class OIDC_User_Manager {
                 'role'          => get_option( 'oidc_default_role', 'subscriber' ),
             );
 
+            /*
+             * Filter: oidc_new_user_data
+             *
+             * Allows modification of the user data array before a new WordPress
+             * user is created via wp_insert_user().
+             *
+             * @param array $new_user_data User data passed to wp_insert_user().
+             * @param array $userinfo      Userinfo claims from the provider.
+             */
+            $new_user_data = apply_filters( 'oidc_new_user_data', $new_user_data, $userinfo );
+
+            /*
+             * Filter: oidc_user_role
+             *
+             * Allows overriding the role assigned to a newly created user.
+             * Runs after oidc_new_user_data, so it takes precedence over the
+             * role set in that filter.
+             *
+             * @param string $role     The WordPress role slug.
+             * @param array  $userinfo Userinfo claims from the provider.
+             */
+            $new_user_data['role'] = apply_filters( 'oidc_user_role', $new_user_data['role'], $userinfo );
+
             $user_id = wp_insert_user( $new_user_data );
 
             if ( is_wp_error( $user_id ) ) {
@@ -98,6 +131,16 @@ class OIDC_User_Manager {
 
             // Subject beim neuen User speichern (sub ist hier garantiert vorhanden).
             update_user_meta( $user->ID, '_oidc_subject', $sub );
+
+            /*
+             * Action: oidc_user_created
+             *
+             * Fires after a new WordPress user has been created via OIDC login.
+             *
+             * @param int   $user_id  ID of the newly created user.
+             * @param array $userinfo Userinfo claims from the provider.
+             */
+            do_action( 'oidc_user_created', $user->ID, $userinfo );
         } else {
             // Bestehenden Benutzer mit aktuellen Daten vom Provider aktualisieren
             $update_data = array( 'ID' => $user->ID );
@@ -120,6 +163,17 @@ class OIDC_User_Manager {
 
             if ( count( $update_data ) > 1 ) {
                 wp_update_user( $update_data );
+
+                /*
+                 * Action: oidc_user_updated
+                 *
+                 * Fires after an existing WordPress user has been updated with
+                 * current data from the OIDC provider.
+                 *
+                 * @param int   $user_id  ID of the updated user.
+                 * @param array $userinfo Userinfo claims from the provider.
+                 */
+                do_action( 'oidc_user_updated', $user->ID, $userinfo );
             }
         }
 
@@ -146,7 +200,26 @@ class OIDC_User_Manager {
         // F7: Erfolgreichen Login loggen
         OIDC_Log::write( $user->ID, true, __( 'OIDC Login erfolgreich.', 'oidc-client' ) );
 
+        /*
+         * Action: oidc_login_success
+         *
+         * Fires after a successful OIDC login, before the redirect.
+         *
+         * @param int   $user_id  ID of the logged-in user.
+         * @param array $userinfo Userinfo claims from the provider.
+         */
+        do_action( 'oidc_login_success', $user->ID, $userinfo );
+
+        /*
+         * Filter: oidc_login_redirect
+         *
+         * Allows changing the URL the user is redirected to after a successful login.
+         *
+         * @param string  $redirect_to Default redirect URL (result of login_redirect filter).
+         * @param WP_User $user        The logged-in user object.
+         */
         $redirect_to = apply_filters( 'login_redirect', admin_url(), '', $user ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core-Filter. NOSONAR -- apply_filters() accepts variadic args; extra args are passed to filter callbacks.
+        $redirect_to = apply_filters( 'oidc_login_redirect', $redirect_to, $user );
         wp_safe_redirect( $redirect_to );
         exit;
     }
@@ -220,6 +293,17 @@ class OIDC_User_Manager {
      */
     public function login_error( $message, $user_id = 0 ) {
         OIDC_Log::write( $user_id, false, $message );
+
+        /*
+         * Action: oidc_login_failed
+         *
+         * Fires when an OIDC login attempt fails, before the redirect.
+         *
+         * @param string $message Error message.
+         * @param int    $user_id WordPress user ID (0 if unknown).
+         */
+        do_action( 'oidc_login_failed', $message, $user_id );
+
         wp_safe_redirect( add_query_arg(
             'oidc_error',
             rawurlencode( $message ),

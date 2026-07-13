@@ -490,4 +490,89 @@ class TokensTest extends WpTestCase {
         $this->assertStringStartsWith( 'Basic ', $captured_args['headers']['Authorization'] );
         $this->assertArrayNotHasKey( 'client_secret', $captured_args['body'] );
     }
+
+    // -------------------------------------------------------------------------
+    // Hooks
+    // -------------------------------------------------------------------------
+
+    public function test_oidc_tokens_stored_action_fires_after_store() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_enable_refresh' )    { return '1'; }
+            if ( $key === 'oidc_token_encryption' )  { return ''; }
+            return $default;
+        } );
+        Functions\when( 'update_user_meta' )->justReturn( true );
+
+        $fired = false;
+        Functions\when( 'do_action' )->alias( function ( $hook ) use ( &$fired ) {
+            if ( 'oidc_tokens_stored' === $hook ) {
+                $fired = true;
+            }
+        } );
+
+        $tokens = new OIDC_Tokens();
+        $tokens->store_tokens( 1, array( 'id_token' => 'id', 'access_token' => 'at', 'refresh_token' => 'rt' ) );
+
+        $this->assertTrue( $fired );
+    }
+
+    public function test_oidc_tokens_stored_action_does_not_fire_when_refresh_disabled() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_enable_refresh' )   { return ''; }
+            if ( $key === 'oidc_token_encryption' ) { return ''; }
+            return $default;
+        } );
+        Functions\when( 'update_user_meta' )->justReturn( true );
+
+        $fired = false;
+        Functions\when( 'do_action' )->alias( function ( $hook ) use ( &$fired ) {
+            if ( 'oidc_tokens_stored' === $hook ) {
+                $fired = true;
+            }
+        } );
+
+        $tokens = new OIDC_Tokens();
+        $tokens->store_tokens( 1, array( 'id_token' => 'id' ) );
+
+        $this->assertFalse( $fired );
+    }
+
+    public function test_oidc_tokens_refreshed_action_fires_after_successful_refresh() {
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'wp_cache_delete' )->justReturn( true );
+        Functions\when( 'get_user_meta' )->alias( function ( $_id, $key ) {
+            if ( $key === '_oidc_access_token' )         { return ''; }
+            if ( $key === '_oidc_access_token_expires' ) { return 0; }
+            if ( $key === '_oidc_refresh_token' )        { return 'refresh-tok'; }
+            return '';
+        } );
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'oidc_client_id' )         { return 'client'; }
+            if ( $key === 'oidc_client_secret' )     { return 'secret'; }
+            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'oidc_enable_refresh' )    { return '1'; }
+            if ( $key === 'oidc_token_encryption' )  { return ''; }
+            return $default;
+        } );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'update_user_meta' )->justReturn( true );
+        Functions\when( 'wp_remote_post' )->justReturn( array( 'response' => array( 'code' => 200 ) ) );
+        Functions\when( 'is_wp_error' )->alias( function ( $v ) { return $v instanceof WP_Error; } );
+        Functions\when( 'wp_remote_retrieve_body' )->justReturn(
+            json_encode( array( 'access_token' => 'new-tok', 'expires_in' => 3600 ) )
+        );
+
+        $fired = false;
+        Functions\when( 'do_action' )->alias( function ( $hook ) use ( &$fired ) {
+            if ( 'oidc_tokens_refreshed' === $hook ) {
+                $fired = true;
+            }
+        } );
+
+        $tokens = new OIDC_Tokens();
+        $tokens->get_valid_access_token( 1 );
+
+        $this->assertTrue( $fired );
+    }
 }

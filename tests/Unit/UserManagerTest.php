@@ -54,7 +54,12 @@ class UserManagerTest extends WpTestCase {
         Functions\when( 'wp_set_current_user' )->justReturn( null );
         Functions\when( 'wp_set_auth_cookie' )->justReturn( null );
         Functions\when( 'do_action' )->justReturn( null );
-        Functions\when( 'apply_filters' )->justReturn( 'https://example.com/wp-admin/' );
+        Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
+            if ( 'login_redirect' === $hook || 'oidc_login_redirect' === $hook ) {
+                return 'https://example.com/wp-admin/';
+            }
+            return $value;
+        } );
         Functions\when( 'admin_url' )->justReturn( 'https://example.com/wp-admin/' );
         Functions\when( '__' )->returnArg();
         Functions\when( 'current_time' )->justReturn( '2026-01-01 12:00:00' );
@@ -69,6 +74,17 @@ class UserManagerTest extends WpTestCase {
             if ( $key === 'oidc_active_claim' )   { return ''; }
             if ( $key === 'oidc_create_user' )    { return true; }
             if ( $key === 'oidc_default_role' )   { return 'subscriber'; }
+            if ( $key === 'oidc_sync_avatar' )    { return ''; }
+            if ( $key === 'oidc_remember_me' )    { return 'never'; }
+            if ( $key === 'oidc_enable_refresh' ) { return ''; }
+            return $default;
+        };
+    }
+
+    /** Gemeinsamer get_option-Alias für Bestehender-User-Tests. */
+    private function existingUserOptions(): \Closure {
+        return function ( $key, $default = false ) {
+            if ( $key === 'oidc_active_claim' )   { return ''; }
             if ( $key === 'oidc_sync_avatar' )    { return ''; }
             if ( $key === 'oidc_remember_me' )    { return 'never'; }
             if ( $key === 'oidc_enable_refresh' ) { return ''; }
@@ -624,5 +640,314 @@ class UserManagerTest extends WpTestCase {
         $this->assertArrayNotHasKey( '_oidc_profile', $metaUpdates );
         $this->assertArrayNotHasKey( '_oidc_phone_number', $metaUpdates );
         $this->assertSame( 'male', $metaUpdates['_oidc_gender'] );
+    }
+
+    // -------------------------------------------------------------------------
+    // Hooks – Actions
+    // -------------------------------------------------------------------------
+
+    public function test_login_success_action_fires_after_successful_login() {
+        $newUser             = new WP_User();
+        $newUser->ID         = 42;
+        $newUser->user_login = 'newuser';
+
+        Functions\when( 'get_option' )->alias( $this->newUserOptions() );
+        Functions\when( 'get_users' )->justReturn( array() );
+        Functions\when( 'get_user_by' )->justReturn( $newUser );
+        Functions\when( 'sanitize_user' )->returnArg();
+        Functions\when( 'username_exists' )->justReturn( false );
+        Functions\when( 'wp_insert_user' )->justReturn( 42 );
+        Functions\when( 'wp_generate_password' )->justReturn( 'pass' );
+
+        $firedWith = null;
+        Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$firedWith ) {
+            if ( 'oidc_login_success' === $hook ) {
+                $firedWith = $args;
+            }
+        } );
+        $this->setUpLoginMocks();
+
+        $this->expectException( OidcTestException::class );
+        $this->manager->authenticate_user(
+            array( 'email' => 'new@example.com', 'sub' => 'sub123' ),
+            array()
+        );
+
+        $this->assertNotNull( $firedWith );
+        $this->assertSame( 42, $firedWith[0] );
+    }
+
+    public function test_login_failed_action_fires_on_error() {
+        $GLOBALS['wpdb'] = new class { public $prefix = 'wp_'; public function insert( $t, $d, $f ) {} };
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'sanitize_email' )->returnArg();
+        Functions\when( 'is_email' )->justReturn( false );
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'current_time' )->justReturn( '2026-01-01 12:00:00' );
+        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
+        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_error=...' );
+
+        $firedWith = null;
+        Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$firedWith ) {
+            if ( 'oidc_login_failed' === $hook ) {
+                $firedWith = $args;
+            }
+        } );
+        Functions\when( 'wp_safe_redirect' )->alias( function ( $url ) {
+            throw new OidcTestException( $url );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $this->manager->authenticate_user( array( 'email' => 'bad', 'sub' => 'sub1' ) );
+
+        $this->assertNotNull( $firedWith );
+        $this->assertIsString( $firedWith[0] );
+    }
+
+    public function test_user_created_action_fires_for_new_user() {
+        $newUser             = new WP_User();
+        $newUser->ID         = 99;
+        $newUser->user_login = 'fresh';
+
+        Functions\when( 'get_option' )->alias( $this->newUserOptions() );
+        Functions\when( 'get_users' )->justReturn( array() );
+        Functions\when( 'get_user_by' )->justReturn( $newUser );
+        Functions\when( 'sanitize_user' )->returnArg();
+        Functions\when( 'username_exists' )->justReturn( false );
+        Functions\when( 'wp_insert_user' )->justReturn( 99 );
+        Functions\when( 'wp_generate_password' )->justReturn( 'pass' );
+
+        $createdUserId = null;
+        Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$createdUserId ) {
+            if ( 'oidc_user_created' === $hook ) {
+                $createdUserId = $args[0];
+            }
+        } );
+        $this->setUpLoginMocks();
+
+        $this->expectException( OidcTestException::class );
+        $this->manager->authenticate_user(
+            array( 'email' => 'fresh@example.com', 'sub' => 'sub-new' ),
+            array()
+        );
+
+        $this->assertSame( 99, $createdUserId );
+    }
+
+    public function test_user_created_action_does_not_fire_for_existing_user() {
+        $existingUser             = new WP_User();
+        $existingUser->ID         = 7;
+        $existingUser->user_login = 'existing';
+
+        Functions\when( 'get_option' )->alias( $this->existingUserOptions() );
+        Functions\when( 'get_users' )->justReturn( array( $existingUser ) );
+        Functions\when( 'wp_update_user' )->justReturn( 7 );
+
+        $created = false;
+        Functions\when( 'do_action' )->alias( function ( $hook ) use ( &$created ) {
+            if ( 'oidc_user_created' === $hook ) {
+                $created = true;
+            }
+        } );
+        $this->setUpLoginMocks();
+
+        $this->expectException( OidcTestException::class );
+        $this->manager->authenticate_user(
+            array( 'email' => 'existing@example.com', 'sub' => 'sub-existing', 'name' => 'Test' ),
+            array()
+        );
+
+        $this->assertFalse( $created );
+    }
+
+    public function test_user_updated_action_fires_for_existing_user() {
+        $existingUser             = new WP_User();
+        $existingUser->ID         = 7;
+        $existingUser->user_login = 'existing';
+
+        Functions\when( 'get_option' )->alias( $this->existingUserOptions() );
+        Functions\when( 'get_users' )->justReturn( array( $existingUser ) );
+        Functions\when( 'wp_update_user' )->justReturn( 7 );
+
+        $updatedUserId = null;
+        Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$updatedUserId ) {
+            if ( 'oidc_user_updated' === $hook ) {
+                $updatedUserId = $args[0];
+            }
+        } );
+        $this->setUpLoginMocks();
+
+        $this->expectException( OidcTestException::class );
+        $this->manager->authenticate_user(
+            array( 'email' => 'existing@example.com', 'sub' => 'sub-existing', 'name' => 'Updated Name' ),
+            array()
+        );
+
+        $this->assertSame( 7, $updatedUserId );
+    }
+
+    // -------------------------------------------------------------------------
+    // Hooks – Filters
+    // -------------------------------------------------------------------------
+
+    public function test_oidc_userinfo_filter_modifies_userinfo_before_processing() {
+        $newUser             = new WP_User();
+        $newUser->ID         = 42;
+        $newUser->user_login = 'filtered';
+
+        Functions\when( 'get_option' )->alias( $this->newUserOptions() );
+        Functions\when( 'get_users' )->justReturn( array() );
+        Functions\when( 'get_user_by' )->justReturn( $newUser );
+        Functions\when( 'sanitize_user' )->returnArg();
+        Functions\when( 'username_exists' )->justReturn( false );
+        Functions\when( 'wp_generate_password' )->justReturn( 'pass' );
+
+        $insertedData = null;
+        Functions\when( 'wp_insert_user' )->alias( function ( $data ) use ( &$insertedData ) {
+            $insertedData = $data;
+            return 42;
+        } );
+
+        // Filter modifies the display_name via oidc_userinfo
+        Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
+            if ( 'oidc_userinfo' === $hook ) {
+                $value['name'] = 'Overridden Name';
+            }
+            if ( 'login_redirect' === $hook || 'oidc_login_redirect' === $hook ) {
+                return 'https://example.com/wp-admin/';
+            }
+            return $value;
+        } );
+        $this->setUpLoginMocks();
+
+        $this->expectException( OidcTestException::class );
+        $this->manager->authenticate_user(
+            array( 'email' => 'f@example.com', 'sub' => 'sub-f', 'name' => 'Original Name' ),
+            array()
+        );
+
+        $this->assertSame( 'Overridden Name', $insertedData['display_name'] );
+    }
+
+    public function test_oidc_new_user_data_filter_modifies_user_data_before_insert() {
+        $newUser             = new WP_User();
+        $newUser->ID         = 42;
+        $newUser->user_login = 'newuser';
+
+        Functions\when( 'get_option' )->alias( $this->newUserOptions() );
+        Functions\when( 'get_users' )->justReturn( array() );
+        Functions\when( 'get_user_by' )->justReturn( $newUser );
+        Functions\when( 'sanitize_user' )->returnArg();
+        Functions\when( 'username_exists' )->justReturn( false );
+        Functions\when( 'wp_generate_password' )->justReturn( 'pass' );
+
+        $insertedData = null;
+        Functions\when( 'wp_insert_user' )->alias( function ( $data ) use ( &$insertedData ) {
+            $insertedData = $data;
+            return 42;
+        } );
+
+        Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
+            if ( 'oidc_new_user_data' === $hook ) {
+                $value['description'] = 'Added by filter';
+            }
+            if ( 'login_redirect' === $hook || 'oidc_login_redirect' === $hook ) {
+                return 'https://example.com/wp-admin/';
+            }
+            return $value;
+        } );
+        $this->setUpLoginMocks();
+
+        $this->expectException( OidcTestException::class );
+        $this->manager->authenticate_user(
+            array( 'email' => 'n@example.com', 'sub' => 'sub-n' ),
+            array()
+        );
+
+        $this->assertSame( 'Added by filter', $insertedData['description'] );
+    }
+
+    public function test_oidc_user_role_filter_overrides_role_for_new_user() {
+        $newUser             = new WP_User();
+        $newUser->ID         = 42;
+        $newUser->user_login = 'newuser';
+
+        Functions\when( 'get_option' )->alias( $this->newUserOptions() );
+        Functions\when( 'get_users' )->justReturn( array() );
+        Functions\when( 'get_user_by' )->justReturn( $newUser );
+        Functions\when( 'sanitize_user' )->returnArg();
+        Functions\when( 'username_exists' )->justReturn( false );
+        Functions\when( 'wp_generate_password' )->justReturn( 'pass' );
+
+        $insertedData = null;
+        Functions\when( 'wp_insert_user' )->alias( function ( $data ) use ( &$insertedData ) {
+            $insertedData = $data;
+            return 42;
+        } );
+
+        Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
+            if ( 'oidc_user_role' === $hook ) {
+                return 'editor';
+            }
+            if ( 'login_redirect' === $hook || 'oidc_login_redirect' === $hook ) {
+                return 'https://example.com/wp-admin/';
+            }
+            return $value;
+        } );
+        $this->setUpLoginMocks();
+
+        $this->expectException( OidcTestException::class );
+        $this->manager->authenticate_user(
+            array( 'email' => 'r@example.com', 'sub' => 'sub-r' ),
+            array()
+        );
+
+        $this->assertSame( 'editor', $insertedData['role'] );
+    }
+
+    public function test_oidc_login_redirect_filter_changes_redirect_target() {
+        $existingUser             = new WP_User();
+        $existingUser->ID         = 7;
+        $existingUser->user_login = 'existing';
+
+        $GLOBALS['wpdb'] = new class { public $prefix = 'wp_'; public function insert( $t, $d, $f ) {} };
+        Functions\when( 'get_option' )->alias( $this->existingUserOptions() );
+        Functions\when( 'get_users' )->justReturn( array( $existingUser ) );
+        Functions\when( 'wp_update_user' )->justReturn( 7 );
+
+        $redirectTarget = null;
+        Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
+            if ( 'oidc_login_redirect' === $hook ) {
+                return 'https://example.com/dashboard/';
+            }
+            if ( 'login_redirect' === $hook ) {
+                return 'https://example.com/wp-admin/';
+            }
+            return $value;
+        } );
+        Functions\when( 'do_action' )->justReturn( null );
+        Functions\when( 'admin_url' )->justReturn( 'https://example.com/wp-admin/' );
+        Functions\when( 'sanitize_email' )->returnArg();
+        Functions\when( 'is_email' )->justReturn( true );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'sanitize_user' )->returnArg();
+        Functions\when( 'esc_url_raw' )->returnArg();
+        Functions\when( 'update_user_meta' )->justReturn( true );
+        Functions\when( 'wp_set_current_user' )->justReturn( null );
+        Functions\when( 'wp_set_auth_cookie' )->justReturn( null );
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'current_time' )->justReturn( '2026-01-01 12:00:00' );
+        Functions\when( 'wp_safe_redirect' )->alias( function ( $url ) use ( &$redirectTarget ) {
+            $redirectTarget = $url;
+            throw new OidcTestException( $url );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $this->manager->authenticate_user(
+            array( 'email' => 'existing@example.com', 'sub' => 'sub-existing' ),
+            array()
+        );
+
+        $this->assertSame( 'https://example.com/dashboard/', $redirectTarget );
     }
 }

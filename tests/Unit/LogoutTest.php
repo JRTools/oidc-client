@@ -485,4 +485,68 @@ class LogoutTest extends WpTestCase {
 
         $this->assertTrue( $result );
     }
+
+    // -------------------------------------------------------------------------
+    // Hooks – Actions
+    // -------------------------------------------------------------------------
+
+    public function test_oidc_logout_action_fires_during_frontchannel_logout() {
+        Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
+            if ( $key === 'oidc_end_session_endpoint' ) {
+                return 'https://provider.example.com/logout';
+            }
+            return $default;
+        } );
+        Functions\when( 'get_user_meta' )->justReturn( '' );
+        Functions\when( 'delete_user_meta' )->justReturn( true );
+        Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
+
+        $firedUserId = null;
+        Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$firedUserId ) {
+            if ( 'oidc_logout' === $hook ) {
+                $firedUserId = $args[0];
+            }
+        } );
+        Functions\when( 'wp_redirect' )->alias( function ( $url ) {
+            throw new OidcTestException( $url );
+        } );
+
+        $this->expectException( OidcTestException::class );
+        $this->logout->handle_frontchannel_logout( 5 );
+
+        $this->assertSame( 5, $firedUserId );
+    }
+
+    public function test_oidc_backchannel_logout_action_fires_after_session_destroyed() {
+        Functions\when( '__' )->returnArg();
+        Functions\when( 'current_time' )->justReturn( '2026-01-01 12:00:00' );
+        Functions\when( 'get_option' )->justReturn( '' );
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_cache_add' )->justReturn( true );
+        Functions\when( 'get_transient' )->justReturn( false );
+        Functions\when( 'set_transient' )->justReturn( true );
+        Functions\when( 'get_user_meta' )->justReturn( '' );
+        Functions\when( 'delete_user_meta' )->justReturn( true );
+
+        $GLOBALS['wpdb'] = new FakeWpdb();
+
+        $user     = new WP_User();
+        $user->ID = 42;
+        Functions\when( 'get_users' )->justReturn( array( $user ) );
+
+        $firedUserId = null;
+        Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$firedUserId ) {
+            if ( 'oidc_backchannel_logout' === $hook ) {
+                $firedUserId = $args[0];
+            }
+        } );
+
+        $jwt      = $this->buildLogoutJwt( array( 'sub' => 'user42', 'iat' => time(), 'jti' => 'jti-bcl', 'events' => self::EVENTS ) );
+        $response = $this->logout->handle_backchannel_logout( $this->makeRequest( $jwt ) );
+
+        $this->assertSame( 200, $response->status );
+        $this->assertSame( 42, $firedUserId );
+
+        unset( $GLOBALS['wpdb'] );
+    }
 }

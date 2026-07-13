@@ -36,6 +36,15 @@ class OIDC_Tokens {
         if ( ! empty( $tokens['refresh_token'] ) ) {
             update_user_meta( $user_id, '_oidc_refresh_token', $this->encrypt( $tokens['refresh_token'] ) );
         }
+
+        /*
+         * Action: oidc_tokens_stored
+         *
+         * Fires after tokens have been stored for a user.
+         *
+         * @param int $user_id WordPress user ID.
+         */
+        do_action( 'oidc_tokens_stored', $user_id );
     }
 
     /**
@@ -135,6 +144,15 @@ class OIDC_Tokens {
             }
 
             $this->store_tokens( $user_id, $data );
+
+            /*
+             * Action: oidc_tokens_refreshed
+             *
+             * Fires after a successful token refresh.
+             *
+             * @param int $user_id WordPress user ID.
+             */
+            do_action( 'oidc_tokens_refreshed', $user_id );
 
             return $data['access_token'];
         } finally {

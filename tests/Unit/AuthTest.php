@@ -911,4 +911,72 @@ class AuthTest extends WpTestCase {
         unset( $GLOBALS['wpdb'] );
         $this->fail( 'Expected OidcTestException for successful first-time link.' );
     }
+
+    // -------------------------------------------------------------------------
+    // Hooks – Filters
+    // -------------------------------------------------------------------------
+
+    public function test_oidc_scopes_filter_changes_scopes_in_auth_request() {
+        $this->setUpInitiateLoginMocks( '' );
+        Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
+            if ( 'oidc_scopes' === $hook ) {
+                return 'openid email profile phone';
+            }
+            return $value;
+        } );
+
+        try {
+            $this->auth->initiate_login();
+        } catch ( OidcTestException $e ) {
+            $this->assertStringContainsString( 'phone', $e->getMessage() );
+            return;
+        }
+        $this->fail( 'Expected OidcTestException.' );
+    }
+
+    public function test_oidc_auth_params_filter_adds_custom_param() {
+        $this->setUpInitiateLoginMocks( '' );
+        Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
+            if ( 'oidc_auth_params' === $hook ) {
+                $value['ui_locales'] = 'de';
+            }
+            return $value;
+        } );
+
+        try {
+            $this->auth->initiate_login();
+        } catch ( OidcTestException $e ) {
+            $this->assertStringContainsString( 'ui_locales=de', $e->getMessage() );
+            return;
+        }
+        $this->fail( 'Expected OidcTestException.' );
+    }
+
+    // -------------------------------------------------------------------------
+    // Hooks – Actions
+    // -------------------------------------------------------------------------
+
+    public function test_oidc_account_linked_action_fires_after_linking() {
+        $this->setUpLinkingCallbackMocks( 'new-sub-xyz', array( 'pending' => true, 'sub' => '' ) );
+
+        $linkedUserId = null;
+        $linkedSub    = null;
+        Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$linkedUserId, &$linkedSub ) {
+            if ( 'oidc_account_linked' === $hook ) {
+                $linkedUserId = $args[0];
+                $linkedSub    = $args[1];
+            }
+        } );
+
+        try {
+            $this->auth->handle_callback();
+        } catch ( OidcTestException $e ) {
+            unset( $GLOBALS['wpdb'] );
+            $this->assertSame( 7, $linkedUserId );
+            $this->assertSame( 'new-sub-xyz', $linkedSub );
+            return;
+        }
+        unset( $GLOBALS['wpdb'] );
+        $this->fail( 'Expected OidcTestException.' );
+    }
 }

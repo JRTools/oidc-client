@@ -74,6 +74,15 @@ class OIDC_Auth {
             wp_die( esc_html__( 'OIDC ist nicht vollständig konfiguriert. Bitte prüfe die Einstellungen.', 'oidc-client' ) );
         }
 
+        /*
+         * Filter: oidc_scopes
+         *
+         * Allows modifying the OAuth scopes requested from the OIDC provider.
+         *
+         * @param string $scopes Space-separated list of scopes (e.g. "openid email profile").
+         */
+        $scopes = apply_filters( 'oidc_scopes', $scopes );
+
         // State – CSRF-Schutz
         $state = $this->token_exchange->generate_random_string();
         set_transient( 'oidc_state_' . $state, 1, 5 * MINUTE_IN_SECONDS );
@@ -109,6 +118,16 @@ class OIDC_Auth {
         if ( ! empty( $extra_params['prompt'] ) ) {
             $params['prompt'] = sanitize_text_field( $extra_params['prompt'] );
         }
+
+        /*
+         * Filter: oidc_auth_params
+         *
+         * Allows adding or modifying parameters sent to the OIDC authorization endpoint.
+         * Use this to add custom parameters such as ui_locales, acr_values, or login_hint.
+         *
+         * @param array $params Query parameters for the authorization request.
+         */
+        $params = apply_filters( 'oidc_auth_params', $params );
 
         wp_redirect( $auth_ep . '?' . http_build_query( $params ) ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- Externes Redirect zum OIDC Authorization Endpoint (gespeicherte Admin-Option, kein User-Input).
         exit;
@@ -213,6 +232,17 @@ class OIDC_Auth {
                 if ( $sub ) {
                     update_user_meta( $current_user_id, '_oidc_subject', $sub );
                 }
+
+                /*
+                 * Action: oidc_account_linked
+                 *
+                 * Fires after an existing WordPress account has been linked to an OIDC provider.
+                 *
+                 * @param int    $user_id WordPress user ID.
+                 * @param string $sub     The OIDC subject identifier.
+                 */
+                do_action( 'oidc_account_linked', $current_user_id, $sub );
+
                 wp_safe_redirect( get_edit_profile_url( $current_user_id ) . '#oidc-linked' );
                 exit;
             }

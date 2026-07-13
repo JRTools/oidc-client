@@ -30,6 +30,16 @@ class OIDC_Logout {
         // Tokens nach Logout löschen
         ( new OIDC_Tokens() )->clear_all_tokens( $user_id );
 
+        /*
+         * Action: oidc_logout
+         *
+         * Fires during frontchannel logout, before the redirect to the provider's
+         * end-session endpoint.
+         *
+         * @param int $user_id WordPress user ID.
+         */
+        do_action( 'oidc_logout', $user_id );
+
         $params = array(
             'post_logout_redirect_uri' => wp_login_url(),
         );
@@ -135,6 +145,15 @@ class OIDC_Logout {
         ( new OIDC_Tokens() )->clear_all_tokens( $user->ID );
 
         OIDC_Log::write( $user->ID, true, 'Backchannel-Logout durchgeführt' . ( $sid ? ' (sid: ' . $sid . ')' : '' ) );
+
+        /*
+         * Action: oidc_backchannel_logout
+         *
+         * Fires after a successful backchannel logout: sessions destroyed, tokens cleared.
+         *
+         * @param int $user_id WordPress user ID.
+         */
+        do_action( 'oidc_backchannel_logout', $user->ID );
 
         return new WP_REST_Response( null, 200 );
     }
