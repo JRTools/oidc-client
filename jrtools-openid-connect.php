@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name:  JRTools OpenID Connect
- * Plugin URI:   https://github.com/JRTools/oidc-client
+ * Plugin URI:   https://github.com/JRTools/jrtools-openid-connect
  * Description:  Ermöglicht die Anmeldung per OpenID Connect (Authorization Code Flow + PKCE). Unterstützt Token-Verschlüsselung, Rollen-Mapping, Session-Management, Frontchannel- und Backchannel-Logout sowie Account-Linking.
  * Version:      1.2.0
  * Author:       Johannes Rösch
- * Author URI:   https://github.com/johannesroesch
+ * Author URI:   https://github.com/JRTools
  * License:      GPL-2.0-or-later
  * License URI:  https://www.gnu.org/licenses/gpl-2.0.html
  *

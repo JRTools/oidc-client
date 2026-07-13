@@ -1,11 +1,11 @@
 # JRTools OpenID Connect
 
-[![CI](https://github.com/JRTools/oidc-client/actions/workflows/ci.yml/badge.svg)](https://github.com/JRTools/oidc-client/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/JRTools/oidc-client/branch/main/graph/badge.svg)](https://codecov.io/gh/JRTools/oidc-client)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=JRTools_oidc-client&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=JRTools_oidc-client)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=JRTools_oidc-client&metric=bugs)](https://sonarcloud.io/summary/new_code?id=JRTools_oidc-client)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=JRTools_oidc-client&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=JRTools_oidc-client)
-[![Latest Release](https://img.shields.io/github/v/release/JRTools/oidc-client)](https://github.com/JRTools/oidc-client/releases/latest)
+[![CI](https://github.com/JRTools/jrtools-openid-connect/actions/workflows/ci.yml/badge.svg)](https://github.com/JRTools/jrtools-openid-connect.php/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/JRTools/jrtools-openid-connect/branch/main/graph/badge.svg)](https://codecov.io/gh/JRTools/jrtools-openid-connect)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=JRTools_jrtools-openid-connect&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=JRTools_jrtools-openid-connect)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=JRTools_jrtools-openid-connect&metric=bugs)](https://sonarcloud.io/summary/new_code?id=JRTools_jrtools-openid-connect)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=JRTools_jrtools-openid-connect&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=JRTools_jrtools-openid-connect)
+[![Latest Release](https://img.shields.io/github/v/release/JRTools/jrtools-openid-connect)](https://github.com/JRTools/jrtools-openid-connect/releases/latest)
 [![License: GPL v2](https://img.shields.io/badge/license-GPL--2.0%2B-blue)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777bb4)](https://www.php.net)
 [![WordPress](https://img.shields.io/badge/WordPress-6.7%2B-21759b)](https://wordpress.org)
@@ -30,7 +30,7 @@ Beim Login werden alle Standard-Claims gemäß OIDC Core 1.0 §5.1 automatisch a
 
 ## Schnellstart
 
-1. Plugin als ZIP von der [Releases-Seite](https://github.com/JRTools/oidc-client/releases) herunterladen
+1. Plugin als ZIP von der [Releases-Seite](https://github.com/JRTools/jrtools-openid-connect/releases) herunterladen
 2. Im WordPress-Admin unter **Plugins → Neu hinzufügen → Plugin hochladen** installieren und aktivieren
 3. **Einstellungen → OIDC Client** aufrufen, Discovery URL eintragen und **Abrufen** klicken
 4. Client ID und Client Secret eintragen, speichern

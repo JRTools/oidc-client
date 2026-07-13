@@ -14,7 +14,7 @@
     <coverage processUncoveredFiles="true">
         <include>
             <directory suffix=".php">includes</directory>
-            <file>oidc-client.php</file>
+            <file>jrtools-openid-connect.php</file>
         </include>
     </coverage>
 </phpunit>
