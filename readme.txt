@@ -66,6 +66,10 @@ Works out of the box with **Keycloak**, **Microsoft Entra ID (Azure AD)**, **Goo
 
 == Frequently Asked Questions ==
 
+= Which WordPress versions are supported? =
+
+The plugin officially supports the last 4 WordPress minor versions. The currently supported range is listed in the `Requires at least` and `Tested up to` headers above. Older versions may work but are not tested and receive no support.
+
 = Which providers are supported? =
 
 Any provider that supports the OpenID Connect Authorization Code Flow. Tested with Keycloak, Microsoft Entra ID (Azure AD), Google, Okta, Auth0, and easyVerein.
