@@ -4,7 +4,7 @@ Tags: openid-connect, oauth2, sso, authentication, login
 Requires at least: 5.9
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 1.0.0
+Stable tag: 1.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -29,6 +29,7 @@ Works out of the box with **Keycloak**, **Microsoft Entra ID (Azure AD)**, **Goo
 * **Lock email address** – prevents OIDC-linked users from changing their email in WordPress
 * **Lock password** – prevents OIDC-linked users from changing their password in WordPress
 * **Profile picture sync** – uses the `picture` claim as the WordPress avatar
+* **Standard Claims mapping** – automatically maps all OIDC Core 1.0 §5.1 standard claims (`name`, `given_name`, `family_name`, `nickname`, `locale`, `birthdate`, `zoneinfo`, `phone_number`, `address`, and more) to WordPress profile fields and user meta on every login
 * **Remember me** – configurable persistent or session-only auth cookie
 * **Hide login form** – shows only the OIDC button; still reachable via `?showlogin=1`
 * **Auto-login** – immediately redirects to the OIDC provider when the login page is visited
@@ -107,6 +108,23 @@ Register `https://your-site.com/wp-json/oidc-client/v1/backchannel-logout` as th
 
 == Changelog ==
 
+= 1.2.0 – 2026-07-13 =
+* Full OIDC Core 1.0 §5.1 standard claims mapping: all standard claims (`name`, `given_name`, `family_name`, `nickname`, `locale`, `middle_name`, `birthdate`, `gender`, `zoneinfo`, `phone_number`, `phone_number_verified`, `email_verified`, `profile`, `address`, `updated_at`) are now mapped to WordPress profile fields and `_oidc_*` user meta on every login
+* `nickname` claim is now mapped to both `user_nicename` (wp_users column) and the native `nickname` usermeta key
+* Username derivation on new user creation: `preferred_username` → `nickname` → email prefix
+* `display_name` and `user_url` are now also set on new user creation (previously update-only)
+* Bugfix: removed deprecated `openssl_free_key()` call (deprecated since PHP 8.0)
+* Bugfix: array-valued URL claims (e.g. `profile`) no longer cause a `TypeError` in `sync_user_meta()`
+* Architecture: `OIDC_Auth` refactored into `OIDC_Token_Exchange` and `OIDC_User_Manager`; `OIDC_Admin` split into `OIDC_Admin_Fields` and `OIDC_Admin_Sanitize`; JWK logic extracted to `OIDC_JWK_Helper`
+* Documentation updated: admin guide extended with claims mapping reference, developer guide updated with new class architecture
+* CI: Mutation Testing now runs on PHP 8.4; all CI quality gates green
+
+= 1.1.1 – 2026-06-30 =
+* CI fixes: Infection upgraded to 0.32, Mutation Testing job moved to PHP 8.4
+* SonarCloud organisation reconfigured; all open issues resolved
+* WordPress 7.0 compatibility: "Tested up to" header updated
+* Dependabot updates: actions/cache, mikepenz/action-junit-report, codecov/codecov-action, release-drafter, softprops/action-gh-release
+
 = 1.1.0 – 2026-03-24 =
 * Backchannel-Logout-URL korrigiert
 * Mindest-PHP-Version auf 8.1 angehoben
@@ -133,6 +151,9 @@ Register `https://your-site.com/wp-json/oidc-client/v1/backchannel-logout` as th
 * Translations: de_DE, en_US, fr_FR, es_ES, sv_SE
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+New standard claims mapping: additional user meta fields (`_oidc_*`) are written on login for any OIDC Core §5.1 claims your provider sends. No breaking changes – existing installations upgrade seamlessly.
 
 = 1.0.0 =
 Initial release – no upgrade steps required.
