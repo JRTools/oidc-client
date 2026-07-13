@@ -116,10 +116,6 @@ class OIDC_JWT_Helper {
 
 		$result = openssl_verify( $signing_input, $signature_raw, $public_key, OPENSSL_ALGO_SHA256 );
 
-		if ( function_exists( 'openssl_free_key' ) ) {
-			openssl_free_key( $public_key ); // phpcs:ignore
-		}
-
 		if ( 1 !== $result ) {
 			return new WP_Error( 'sig_invalid', __( 'JWT-Signatur ist ungültig.', 'oidc-client' ) );
 		}

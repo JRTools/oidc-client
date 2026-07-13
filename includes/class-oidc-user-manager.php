@@ -190,6 +190,9 @@ class OIDC_User_Manager {
             }
             $value = $userinfo[ $claim ];
             if ( null !== $sanitizer ) {
+                if ( ! is_string( $value ) ) {
+                    continue;
+                }
                 $value = $sanitizer( $value );
             } elseif ( is_bool( $value ) || in_array( $value, array( 'true', 'false', '0', '1', 0, 1 ), true ) ) {
                 $value = (bool) filter_var( $value, FILTER_VALIDATE_BOOLEAN );
