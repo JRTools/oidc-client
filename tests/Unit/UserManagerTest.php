@@ -581,4 +581,48 @@ class UserManagerTest extends WpTestCase {
         $this->assertArrayNotHasKey( 'nickname', $metaUpdates );
         $this->assertArrayNotHasKey( 'locale', $metaUpdates );
     }
+
+    // -------------------------------------------------------------------------
+    // Regression: Array-Wert in URL-Claim darf keinen TypeError auslösen
+    // -------------------------------------------------------------------------
+
+    public function test_sync_user_meta_skips_array_value_for_url_claims() {
+        $existingUser             = new WP_User();
+        $existingUser->ID         = 8;
+        $existingUser->user_login = 'arrayuser';
+
+        $metaUpdates = array();
+        Functions\when( 'get_option' )->alias( function ( $k, $d = false ) {
+            if ( $k === 'oidc_active_claim' )   { return ''; }
+            if ( $k === 'oidc_sync_avatar' )    { return ''; }
+            if ( $k === 'oidc_remember_me' )    { return 'never'; }
+            if ( $k === 'oidc_enable_refresh' ) { return ''; }
+            return $d;
+        } );
+        Functions\when( 'get_users' )->justReturn( array( $existingUser ) );
+        Functions\when( 'wp_update_user' )->justReturn( 8 );
+        Functions\when( 'update_user_meta' )->alias( function ( $uid, $key, $val ) use ( &$metaUpdates ) {
+            $metaUpdates[ $key ] = $val;
+            return true;
+        } );
+        $this->setUpLoginMocks();
+
+        // profile und phone_number als Array — darf keinen TypeError werfen
+        $this->expectException( OidcTestException::class );
+        $this->manager->authenticate_user(
+            array(
+                'email'        => 'a@example.com',
+                'sub'          => 'sub-arr',
+                'profile'      => array( 'https://provider.example.com/u/1' ),
+                'phone_number' => array( '+49123456789' ),
+                'gender'       => 'male', // String-Claim bleibt normal
+            ),
+            array()
+        );
+
+        // Array-Claims werden übersprungen, String-Claim wird gespeichert
+        $this->assertArrayNotHasKey( '_oidc_profile', $metaUpdates );
+        $this->assertArrayNotHasKey( '_oidc_phone_number', $metaUpdates );
+        $this->assertSame( 'male', $metaUpdates['_oidc_gender'] );
+    }
 }
