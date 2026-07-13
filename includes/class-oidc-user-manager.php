@@ -62,10 +62,12 @@ class OIDC_User_Manager {
                 return;
             }
 
-            // Benutzernamen aus preferred_username oder E-Mail ableiten
+            // Benutzernamen aus preferred_username, nickname oder E-Mail ableiten
             $raw_username = isset( $userinfo['preferred_username'] )
                 ? $userinfo['preferred_username']
-                : strstr( $email, '@', true );
+                : ( isset( $userinfo['nickname'] )
+                    ? $userinfo['nickname']
+                    : strstr( $email, '@', true ) );
             $username = sanitize_user( $raw_username, true );
 
             // Eindeutigkeit sicherstellen
@@ -73,14 +75,19 @@ class OIDC_User_Manager {
                 $username = $username . '_' . wp_generate_password( 5, false );
             }
 
-            $user_id = wp_insert_user( array(
-                'user_login' => $username,
-                'user_email' => $email,
-                'user_pass'  => wp_generate_password( 32, true, true ),
-                'first_name' => isset( $userinfo['given_name'] )  ? sanitize_text_field( $userinfo['given_name'] )  : '',
-                'last_name'  => isset( $userinfo['family_name'] ) ? sanitize_text_field( $userinfo['family_name'] ) : '',
-                'role'       => get_option( 'oidc_default_role', 'subscriber' ),
-            ) );
+            $new_user_data = array(
+                'user_login'    => $username,
+                'user_email'    => $email,
+                'user_pass'     => wp_generate_password( 32, true, true ),
+                'first_name'    => isset( $userinfo['given_name'] )  ? sanitize_text_field( $userinfo['given_name'] )  : '',
+                'last_name'     => isset( $userinfo['family_name'] ) ? sanitize_text_field( $userinfo['family_name'] ) : '',
+                'display_name'  => isset( $userinfo['name'] )        ? sanitize_text_field( $userinfo['name'] )        : '',
+                'user_url'      => isset( $userinfo['website'] )     ? esc_url_raw( $userinfo['website'] )             : '',
+                'user_nicename' => isset( $userinfo['nickname'] )    ? sanitize_user( $userinfo['nickname'] )          : '',
+                'role'          => get_option( 'oidc_default_role', 'subscriber' ),
+            );
+
+            $user_id = wp_insert_user( $new_user_data );
 
             if ( is_wp_error( $user_id ) ) {
                 $this->login_error( $user_id->get_error_message() );
@@ -107,11 +114,17 @@ class OIDC_User_Manager {
             if ( isset( $userinfo['website'] ) ) {
                 $update_data['user_url'] = esc_url_raw( $userinfo['website'] );
             }
+            if ( isset( $userinfo['nickname'] ) ) {
+                $update_data['user_nicename'] = sanitize_user( $userinfo['nickname'] );
+            }
 
             if ( count( $update_data ) > 1 ) {
                 wp_update_user( $update_data );
             }
         }
+
+        // Standard-Claims in wp_usermeta synchronisieren (nur wenn im Token vorhanden)
+        $this->sync_user_meta( $user->ID, $userinfo );
 
         // F6: Avatar-URL speichern
         if ( get_option( 'oidc_sync_avatar', '' ) === '1' && ! empty( $userinfo['picture'] ) ) {
@@ -136,6 +149,60 @@ class OIDC_User_Manager {
         $redirect_to = apply_filters( 'login_redirect', admin_url(), '', $user ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core-Filter. NOSONAR -- apply_filters() accepts variadic args; extra args are passed to filter callbacks.
         wp_safe_redirect( $redirect_to );
         exit;
+    }
+
+    /**
+     * Synchronisiert OIDC Standard-Claims (§5.1) in wp_usermeta.
+     * Nur Claims die im Token vorhanden sind werden geschrieben.
+     *
+     * @param int   $user_id  WordPress User-ID.
+     * @param array $userinfo Userinfo-Daten vom Provider.
+     */
+    private function sync_user_meta( $user_id, $userinfo ) {
+        // Native WordPress usermeta-Keys (WP kennt diese nativ)
+        $wp_meta_claims = array(
+            'nickname' => 'sanitize_text_field',
+            'locale'   => 'sanitize_text_field',
+        );
+
+        foreach ( $wp_meta_claims as $claim => $sanitizer ) {
+            if ( isset( $userinfo[ $claim ] ) ) {
+                update_user_meta( $user_id, $claim, $sanitizer( $userinfo[ $claim ] ) );
+            }
+        }
+
+        // OIDC-spezifische usermeta-Keys (Präfix _oidc_)
+        $oidc_meta_claims = array(
+            'middle_name'            => 'sanitize_text_field',
+            'profile'                => 'esc_url_raw',
+            'gender'                 => 'sanitize_text_field',
+            'birthdate'              => 'sanitize_text_field',
+            'zoneinfo'               => 'sanitize_text_field',
+            'phone_number'           => 'sanitize_text_field',
+            'phone_number_verified'  => null, // Boolean
+            'email_verified'         => null, // Boolean
+            'updated_at'             => null, // Integer (Unix timestamp)
+        );
+
+        foreach ( $oidc_meta_claims as $claim => $sanitizer ) {
+            if ( ! isset( $userinfo[ $claim ] ) ) {
+                continue;
+            }
+            $value = $userinfo[ $claim ];
+            if ( null !== $sanitizer ) {
+                $value = $sanitizer( $value );
+            } elseif ( is_bool( $value ) || in_array( $value, array( 'true', 'false', '0', '1', 0, 1 ), true ) ) {
+                $value = (bool) filter_var( $value, FILTER_VALIDATE_BOOLEAN );
+            } else {
+                $value = (int) $value;
+            }
+            update_user_meta( $user_id, '_oidc_' . $claim, $value );
+        }
+
+        // address ist ein JSON-Objekt (§5.1.1) – als JSON-String speichern
+        if ( isset( $userinfo['address'] ) && is_array( $userinfo['address'] ) ) {
+            update_user_meta( $user_id, '_oidc_address', wp_json_encode( $userinfo['address'] ) );
+        }
     }
 
     // -------------------------------------------------------------------------
