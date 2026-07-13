@@ -18,6 +18,8 @@ permissions: {}
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  WP_TESTED_UP_TO: '7.0'
+  WP_REQUIRES_AT_LEAST: '6.7'
 
 jobs:
   wait-for-ci:
@@ -83,11 +85,9 @@ jobs:
           echo "  Oldest: ${EXPECTED_OLDEST}"
           echo "  Latest: ${EXPECTED_LATEST}"
 
-          # Aktuell konfigurierte Werte aus dem Workflow
-          CURRENT_REQUIRES=$(grep "WP_REQUIRES_AT_LEAST:" .github/workflows/release.yml \
-            | sed "s/.*WP_REQUIRES_AT_LEAST: '//; s/'.*//")
-          CURRENT_TESTED=$(grep "WP_TESTED_UP_TO:" .github/workflows/release.yml \
-            | sed "s/.*WP_TESTED_UP_TO: '//; s/'.*//")
+          # Konfigurierte Werte aus den Job-Env-Vars (bereits als Umgebungsvariablen verfügbar)
+          CURRENT_REQUIRES="${WP_REQUIRES_AT_LEAST}"
+          CURRENT_TESTED="${WP_TESTED_UP_TO}"
 
           echo ""
           echo "Aktuell konfiguriert:"
@@ -125,10 +125,6 @@ jobs:
     needs: [check-wp-versions]
     permissions:
       contents: write
-
-    env:
-      WP_TESTED_UP_TO: '7.0'
-      WP_REQUIRES_AT_LEAST: '6.7'
 
     steps:
       - name: Checkout
