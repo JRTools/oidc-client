@@ -1,0 +1,150 @@
+name: WordPress-Versionen aktualisieren
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  update:
+    name: WP-Versionen prüfen & PR öffnen
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Letzte 4 WordPress Minor-Versionen ermitteln
+        id: wp_versions
+        run: |
+          # WordPress-API liefert alle verfügbaren Versionen
+          JSON=$(curl -sf "https://api.wordpress.org/core/version-check/1.7/")
+
+          # Alle Major.Minor-Versionen extrahieren, deduplizieren, absteigend sortieren
+          VERSIONS=$(echo "$JSON" \
+            | jq -r '[.offers[].version] | map(split(".") | .[0:2] | join(".")) | unique | sort_by(split(".") | map(tonumber)) | reverse | .[:4] | reverse | .[]')
+
+          echo "Gefundene Versionen:"
+          echo "$VERSIONS"
+
+          # Als JSON-Array für die Matrix und als komma-getrennte Liste
+          MATRIX=$(echo "$VERSIONS" | jq -R . | jq -sc .)
+          LATEST=$(echo "$VERSIONS" | tail -1)
+          OLDEST=$(echo "$VERSIONS" | head -1)
+
+          echo "MATRIX=${MATRIX}"   >> "$GITHUB_OUTPUT"
+          echo "LATEST=${LATEST}"   >> "$GITHUB_OUTPUT"
+          echo "OLDEST=${OLDEST}"   >> "$GITHUB_OUTPUT"
+
+          echo "Matrix:  ${MATRIX}"
+          echo "Latest:  ${LATEST}"
+          echo "Oldest:  ${OLDEST}"
+
+      - name: Aktuelle Werte aus Dateien lesen
+        id: current
+        run: |
+          CURRENT_MATRIX=$(grep "wp:" .github/workflows/ci.yml \
+            | sed "s/.*wp: \['\(.*\)'\]/\1/" \
+            | sed "s/', '/\", \"/g; s/^/[\"/; s/$/\"]/" \
+            | tr -d ' ')
+          CURRENT_TESTED=$(grep "^Tested up to:" readme.txt | sed "s/Tested up to: //")
+          CURRENT_REQUIRES=$(grep "^Requires at least:" readme.txt | sed "s/Requires at least: //")
+          CURRENT_CI_ENV_TESTED=$(grep "WP_TESTED_UP_TO:" .github/workflows/release.yml \
+            | sed "s/.*WP_TESTED_UP_TO: '//; s/'//")
+          CURRENT_CI_ENV_REQUIRES=$(grep "WP_REQUIRES_AT_LEAST:" .github/workflows/release.yml \
+            | sed "s/.*WP_REQUIRES_AT_LEAST: '//; s/'//")
+
+          echo "TESTED=${CURRENT_TESTED}"           >> "$GITHUB_OUTPUT"
+          echo "REQUIRES=${CURRENT_REQUIRES}"       >> "$GITHUB_OUTPUT"
+
+          echo "Aktuell Tested up to:     ${CURRENT_TESTED}"
+          echo "Aktuell Requires at least: ${CURRENT_REQUIRES}"
+
+      - name: Prüfen ob Aktualisierung nötig
+        id: check
+        env:
+          NEW_LATEST: ${{ steps.wp_versions.outputs.LATEST }}
+          NEW_OLDEST: ${{ steps.wp_versions.outputs.OLDEST }}
+          CUR_TESTED: ${{ steps.current.outputs.TESTED }}
+          CUR_REQUIRES: ${{ steps.current.outputs.REQUIRES }}
+        run: |
+          if [ "$NEW_LATEST" = "$CUR_TESTED" ] && [ "$NEW_OLDEST" = "$CUR_REQUIRES" ]; then
+            echo "Keine Änderung notwendig – Versionen sind aktuell."
+            echo "NEEDED=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Aktualisierung notwendig:"
+            echo "  Tested up to:     ${CUR_TESTED} → ${NEW_LATEST}"
+            echo "  Requires at least: ${CUR_REQUIRES} → ${NEW_OLDEST}"
+            echo "NEEDED=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Dateien aktualisieren
+        if: steps.check.outputs.NEEDED == 'true'
+        env:
+          MATRIX:   ${{ steps.wp_versions.outputs.MATRIX }}
+          LATEST:   ${{ steps.wp_versions.outputs.LATEST }}
+          OLDEST:   ${{ steps.wp_versions.outputs.OLDEST }}
+        run: |
+          # ci.yml – Matrix ersetzen
+          # Baut "wp: ['x.x', 'x.x', 'x.x', 'x.x']" aus dem JSON-Array
+          WP_LIST=$(echo "$MATRIX" | jq -r '[.[] | "'"'"'" + . + "'"'"'"] | join(", ")')
+          sed -i "s/wp: \[.*\]/wp: [${WP_LIST}]/" .github/workflows/ci.yml
+
+          # release.yml – Env-Vars aktualisieren
+          sed -i "s/WP_TESTED_UP_TO: '[^']*'/WP_TESTED_UP_TO: '${LATEST}'/" .github/workflows/release.yml
+          sed -i "s/WP_REQUIRES_AT_LEAST: '[^']*'/WP_REQUIRES_AT_LEAST: '${OLDEST}'/" .github/workflows/release.yml
+
+          # readme.txt – Header-Felder aktualisieren
+          sed -i "s/^Tested up to:.*/Tested up to: ${LATEST}/" readme.txt
+          sed -i "s/^Requires at least:.*/Requires at least: ${OLDEST}/" readme.txt
+
+          echo "Geänderte Dateien:"
+          git diff --stat
+
+      - name: PR öffnen
+        if: steps.check.outputs.NEEDED == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LATEST:   ${{ steps.wp_versions.outputs.LATEST }}
+          OLDEST:   ${{ steps.wp_versions.outputs.OLDEST }}
+          MATRIX:   ${{ steps.wp_versions.outputs.MATRIX }}
+        run: |
+          BRANCH="chore/update-wp-versions-$(date +%Y%m%d)"
+
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add .github/workflows/ci.yml .github/workflows/release.yml readme.txt
+          git commit -m "chore: update WordPress version matrix to $(echo $MATRIX | jq -r 'join(", ")')"
+          git push origin "$BRANCH"
+
+          WP_LIST_MD=$(echo "$MATRIX" | jq -r '[.[] | "`" + . + "`"] | join(", ")')
+
+          gh pr create \
+            --title "chore: update WordPress version matrix" \
+            --body "## WordPress-Versionen aktualisiert
+
+          Automatisch erstellt von [Update WP Versions](../actions/workflows/update-wp-versions.yml).
+
+          | Feld | Alt | Neu |
+          |---|---|---|
+          | CI-Matrix | — | ${WP_LIST_MD} |
+          | \`Tested up to\` | \`${{ steps.current.outputs.TESTED }}\` | \`${LATEST}\` |
+          | \`Requires at least\` | \`${{ steps.current.outputs.REQUIRES }}\` | \`${OLDEST}\` |
+
+          ## Geänderte Dateien
+          - \`.github/workflows/ci.yml\` — Matrix aktualisiert
+          - \`.github/workflows/release.yml\` — \`WP_TESTED_UP_TO\` und \`WP_REQUIRES_AT_LEAST\` aktualisiert
+          - \`readme.txt\` — \`Tested up to\` und \`Requires at least\` aktualisiert
+
+          Bitte prüfen und mergen." \
+            --label "chore" \
+            --head "$BRANCH" \
+            --base main
