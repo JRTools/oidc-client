@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   update_release_draft:
     name: Release Draft aktualisieren
@@ -14,5 +17,73 @@ jobs:
 
     steps:
       - uses: release-drafter/release-drafter@4d75298e00d9e34c483e5ff8c68d0ea1c1940c1e # v7.5.1
+        id: drafter
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  snapshot:
+    name: Snapshot-ZIP bauen & anhängen
+    runs-on: ubuntu-latest
+    needs: update_release_draft
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: PHP einrichten
+        uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
+        with:
+          php-version: '8.2'
+          extensions: openssl, mbstring, json
+          coverage: none
+          tools: composer:v2
+
+      - name: Produktiv-Abhängigkeiten installieren
+        run: composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Snapshot-ZIP erstellen
+        run: |
+          SNAPSHOT_NAME="oidc-client-SNAPSHOT"
+          mkdir -p dist
+          zip -r "dist/${SNAPSHOT_NAME}.zip" . \
+            --include "oidc-client.php" \
+            --include "readme.txt" \
+            --include "includes/*" \
+            --include "assets/*" \
+            --include "languages/*" \
+            -x "*.git*"
+          echo "SNAPSHOT_ZIP=dist/${SNAPSHOT_NAME}.zip" >> "$GITHUB_ENV"
+
+      - name: Draft-Release ermitteln
+        id: draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases" \
+            --jq '[.[] | select(.draft == true)] | first | .id')
+          echo "RELEASE_ID=${RELEASE_ID}" >> "$GITHUB_OUTPUT"
+
+      - name: Alten Snapshot-Asset löschen (falls vorhanden)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ steps.draft.outputs.RELEASE_ID }}
+        run: |
+          OLD_ASSET_ID=$(gh api "repos/${{ github.repository }}/releases/${RELEASE_ID}/assets" \
+            --jq '[.[] | select(.name == "oidc-client-SNAPSHOT.zip")] | first | .id')
+          if [ -n "$OLD_ASSET_ID" ] && [ "$OLD_ASSET_ID" != "null" ]; then
+            gh api --method DELETE "repos/${{ github.repository }}/releases/assets/${OLD_ASSET_ID}"
+            echo "Alter Snapshot-Asset gelöscht (ID: ${OLD_ASSET_ID})"
+          fi
+
+      - name: Snapshot-ZIP an Draft anhängen
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload \
+            --repo "${{ github.repository }}" \
+            --clobber \
+            "$(gh api "repos/${{ github.repository }}/releases" \
+              --jq '[.[] | select(.draft == true)] | first | .tag_name')" \
+            "${{ env.SNAPSHOT_ZIP }}"
