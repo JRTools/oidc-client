@@ -45,7 +45,8 @@ jobs:
 
       - name: Snapshot-ZIP erstellen
         run: |
-          SNAPSHOT_NAME="jrtools-openid-connect-SNAPSHOT"
+          VERSION=$(grep "^\s*\* Version:" jrtools-openid-connect.php | awk '{print $NF}')
+          SNAPSHOT_NAME="jrtools-openid-connect-${VERSION}"
           mkdir -p dist
           zip -r "dist/${SNAPSHOT_NAME}.zip" . \
             --include "jrtools-openid-connect.php" \
@@ -55,6 +56,7 @@ jobs:
             --include "languages/*" \
             -x "*.git*"
           echo "SNAPSHOT_ZIP=dist/${SNAPSHOT_NAME}.zip" >> "$GITHUB_ENV"
+          echo "SNAPSHOT_NAME=${SNAPSHOT_NAME}.zip" >> "$GITHUB_ENV"
 
       - name: Draft-Release ermitteln
         id: draft
@@ -77,12 +79,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ steps.draft.outputs.RELEASE_ID }}
         run: |
-          OLD_ASSET_ID=$(gh api "repos/${{ github.repository }}/releases/${RELEASE_ID}/assets" \
-            --jq '[.[] | select(.name == "jrtools-openid-connect-SNAPSHOT.zip")] | first | .id')
-          if [ -n "$OLD_ASSET_ID" ] && [ "$OLD_ASSET_ID" != "null" ]; then
+          OLD_ASSET_IDS=$(gh api "repos/${{ github.repository }}/releases/${RELEASE_ID}/assets" \
+            --jq '[.[] | select(.name | startswith("jrtools-openid-connect-")) | .id] | .[]')
+          for OLD_ASSET_ID in $OLD_ASSET_IDS; do
             gh api --method DELETE "repos/${{ github.repository }}/releases/assets/${OLD_ASSET_ID}"
             echo "Alter Snapshot-Asset gelöscht (ID: ${OLD_ASSET_ID})"
-          fi
+          done
 
       - name: Snapshot-ZIP an Draft anhängen
         if: ${{ steps.draft.outputs.RELEASE_ID != '' }}
