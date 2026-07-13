@@ -63,9 +63,16 @@ jobs:
         run: |
           RELEASE_ID=$(gh api "repos/${{ github.repository }}/releases" \
             --jq '[.[] | select(.draft == true)] | first | .id')
-          echo "RELEASE_ID=${RELEASE_ID}" >> "$GITHUB_OUTPUT"
+          if [ -z "$RELEASE_ID" ] || [ "$RELEASE_ID" = "null" ]; then
+            echo "Kein Draft-Release vorhanden – Snapshot wird übersprungen."
+            echo "RELEASE_ID=" >> "$GITHUB_OUTPUT"
+          else
+            echo "Draft-Release gefunden: ${RELEASE_ID}"
+            echo "RELEASE_ID=${RELEASE_ID}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Alten Snapshot-Asset löschen (falls vorhanden)
+        if: ${{ steps.draft.outputs.RELEASE_ID != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_ID: ${{ steps.draft.outputs.RELEASE_ID }}
@@ -78,12 +85,15 @@ jobs:
           fi
 
       - name: Snapshot-ZIP an Draft anhängen
+        if: ${{ steps.draft.outputs.RELEASE_ID != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_ID: ${{ steps.draft.outputs.RELEASE_ID }}
         run: |
+          TAG_NAME=$(gh api "repos/${{ github.repository }}/releases/${RELEASE_ID}" \
+            --jq '.tag_name')
           gh release upload \
             --repo "${{ github.repository }}" \
             --clobber \
-            "$(gh api "repos/${{ github.repository }}/releases" \
-              --jq '[.[] | select(.draft == true)] | first | .tag_name')" \
+            "${TAG_NAME}" \
             "${{ env.SNAPSHOT_ZIP }}"
