@@ -78,6 +78,7 @@ jobs:
         run: |
           sed -i "s/^\( \* Version:\s*\).*/\1${VERSION}/" oidc-client.php
           sed -i "s/^define( 'OIDC_CLIENT_VERSION', '[^']*' );/define( 'OIDC_CLIENT_VERSION', '${VERSION}' );/" oidc-client.php
+          sed -i "s/^\( \* Requires at least:\s*\).*/\1${WP_REQUIRES_AT_LEAST}/" oidc-client.php
           sed -i "s/^Stable tag:.*/Stable tag: ${VERSION}/" readme.txt
           sed -i "s/^Tested up to:.*/Tested up to: ${WP_TESTED_UP_TO}/" readme.txt
           sed -i "s/^Requires at least:.*/Requires at least: ${WP_REQUIRES_AT_LEAST}/" readme.txt

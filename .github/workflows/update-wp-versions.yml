@@ -104,6 +104,9 @@ jobs:
           sed -i "s/^Tested up to:.*/Tested up to: ${LATEST}/" readme.txt
           sed -i "s/^Requires at least:.*/Requires at least: ${OLDEST}/" readme.txt
 
+          # oidc-client.php – Plugin-Header aktualisieren (muss mit readme.txt übereinstimmen)
+          sed -i "s/^\( \* Requires at least:\s*\).*/\1${OLDEST}/" oidc-client.php
+
           echo "Geänderte Dateien:"
           git diff --stat
 
@@ -143,6 +146,7 @@ jobs:
           - \`.github/workflows/ci.yml\` — Matrix aktualisiert
           - \`.github/workflows/release.yml\` — \`WP_TESTED_UP_TO\` und \`WP_REQUIRES_AT_LEAST\` aktualisiert
           - \`readme.txt\` — \`Tested up to\` und \`Requires at least\` aktualisiert
+          - \`oidc-client.php\` — \`Requires at least\` im Plugin-Header aktualisiert
 
           Bitte prüfen und mergen." \
             --label "chore" \
