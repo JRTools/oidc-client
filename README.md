@@ -8,7 +8,7 @@
 [![Latest Release](https://img.shields.io/github/v/release/johannesroesch/oidc-client)](https://github.com/johannesroesch/oidc-client/releases/latest)
 [![License: GPL v2](https://img.shields.io/badge/license-GPL--2.0%2B-blue)](https://www.gnu.org/licenses/gpl-2.0.html)
 [![PHP](https://img.shields.io/badge/PHP-8.1%2B-777bb4)](https://www.php.net)
-[![WordPress](https://img.shields.io/badge/WordPress-5.9%2B-21759b)](https://wordpress.org)
+[![WordPress](https://img.shields.io/badge/WordPress-6.7%2B-21759b)](https://wordpress.org)
 
 WordPress-Plugin für die Anmeldung per OpenID Connect (Authorization Code Flow mit PKCE).
 
@@ -39,7 +39,7 @@ Beim Login werden alle Standard-Claims gemäß OIDC Core 1.0 §5.1 automatisch a
 ## Voraussetzungen
 
 - PHP 8.1 oder höher
-- WordPress 5.9 oder höher
+- WordPress 6.7 oder höher (offiziell unterstützt: die letzten 4 Minor-Versionen)
 - PHP-Extension `openssl`
 
 ## Lizenz
