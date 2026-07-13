@@ -29,7 +29,7 @@ class PluginMainTest extends WpTestCase {
     }
 
     public function test_version_constant_value() {
-        $this->assertSame( '1.0.0', OIDC_CLIENT_VERSION );
+        $this->assertSame( '1.2.0', OIDC_CLIENT_VERSION );
     }
 
     public function test_dir_constant_is_defined() {
