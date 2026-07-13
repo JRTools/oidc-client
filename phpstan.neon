@@ -5,7 +5,7 @@ parameters:
     level: 5
     paths:
         - includes
-        - oidc-client.php
+        - jrtools-openid-connect.php
     bootstrapFiles:
         - tests/phpstan-bootstrap.php
     ignoreErrors:

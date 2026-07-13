@@ -19,7 +19,7 @@ class OIDC_Logout {
     // -------------------------------------------------------------------------
 
     public function handle_frontchannel_logout( $user_id ) {
-        $end_session_ep = get_option( 'oidc_end_session_endpoint', '' );
+        $end_session_ep = get_option( 'jrtools_oidc_end_session_endpoint', '' );
 
         if ( empty( $end_session_ep ) ) {
             return;
@@ -38,7 +38,7 @@ class OIDC_Logout {
          *
          * @param int $user_id WordPress user ID.
          */
-        do_action( 'oidc_logout', $user_id );
+        do_action( 'jrtools_oidc_logout', $user_id );
 
         $params = array(
             'post_logout_redirect_uri' => wp_login_url(),
@@ -57,7 +57,7 @@ class OIDC_Logout {
     // -------------------------------------------------------------------------
 
     public function register_backchannel_endpoint() {
-        register_rest_route( 'oidc-client/v1', '/backchannel-logout', array(
+        register_rest_route( 'jrtools-oidc/v1', '/backchannel-logout', array(
             'methods'             => 'POST',
             'callback'            => array( $this, 'handle_backchannel_logout' ),
             'permission_callback' => array( $this, 'backchannel_logout_permission_callback' ),
@@ -73,7 +73,7 @@ class OIDC_Logout {
      */
     public function backchannel_logout_permission_callback() {
         $ip            = isset( $_SERVER['REMOTE_ADDR'] ) ? $_SERVER['REMOTE_ADDR'] : '0.0.0.0'; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.MissingUnslash, WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- REMOTE_ADDR wird vom Webserver gesetzt, nicht vom Client manipulierbar.
-        $transient_key = 'oidc_rl_' . md5( $ip ); // phpcs:ignore -- md5 used as cache key, not for security
+        $transient_key = 'jrtools_oidc_rl_' . md5( $ip ); // phpcs:ignore -- md5 used as cache key, not for security
         $max_requests  = 10;
 
         $count = get_transient( $transient_key );
@@ -124,7 +124,7 @@ class OIDC_Logout {
 
         if ( ! empty( $sub ) ) {
             $users = get_users( array(
-                'meta_key'   => '_oidc_subject', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                'meta_key'   => '_jrtools_oidc_subject', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
                 'meta_value' => $sub,            // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
                 'number'     => 1,
             ) );
@@ -153,7 +153,7 @@ class OIDC_Logout {
          *
          * @param int $user_id WordPress user ID.
          */
-        do_action( 'oidc_backchannel_logout', $user->ID );
+        do_action( 'jrtools_oidc_backchannel_logout', $user->ID );
 
         return new WP_REST_Response( null, 200 );
     }
@@ -175,7 +175,7 @@ class OIDC_Logout {
         list( $header, $claims, $parts ) = $parsed;
 
         // Signatur prüfen
-        $jwks_uri = get_option( 'oidc_jwks_uri', '' );
+        $jwks_uri = get_option( 'jrtools_oidc_jwks_uri', '' );
         if ( ! empty( $jwks_uri ) ) {
             $sig_result = OIDC_JWT_Helper::verify_signature( $parts, $header, $jwks_uri );
             if ( is_wp_error( $sig_result ) ) {
@@ -186,13 +186,13 @@ class OIDC_Logout {
         $now = time();
 
         // iss prüfen
-        $expected_issuer = get_option( 'oidc_issuer', '' );
+        $expected_issuer = get_option( 'jrtools_oidc_issuer', '' );
         if ( ! empty( $expected_issuer ) && ( ! isset( $claims['iss'] ) || $claims['iss'] !== $expected_issuer ) ) {
                 return new WP_Error( 'logout_token_iss', 'Logout-Token Issuer ungültig.' );
         }
 
         // aud prüfen
-        $client_id = get_option( 'oidc_client_id', '' );
+        $client_id = get_option( 'jrtools_oidc_client_id', '' );
         if ( ! empty( $client_id ) ) {
             $aud      = isset( $claims['aud'] ) ? $claims['aud'] : array();
             $aud_list = is_array( $aud ) ? $aud : array( $aud );
@@ -225,11 +225,11 @@ class OIDC_Logout {
         // JTI Replay-Schutz (atomar: Cache zuerst, Transient als Fallback für Cache-Neustart)
         if ( isset( $claims['jti'] ) ) {
             $jti     = sanitize_text_field( $claims['jti'] );
-            $jti_key = 'oidc_jti_' . md5( $jti ); // phpcs:ignore -- md5 as cache key, not for security
+            $jti_key = 'jrtools_oidc_jti_' . md5( $jti ); // phpcs:ignore -- md5 as cache key, not for security
             $exp     = isset( $claims['exp'] ) ? max( 0, (int) $claims['exp'] - $now ) : DAY_IN_SECONDS;
 
             // wp_cache_add ist atomar: gibt false wenn Schlüssel bereits existiert.
-            if ( false === wp_cache_add( $jti_key, 1, 'oidc_jti', $exp ) ) {
+            if ( false === wp_cache_add( $jti_key, 1, 'jrtools_oidc_jti', $exp ) ) {
                 return new WP_Error( 'logout_token_replay', 'Logout-Token wurde bereits verwendet (Replay).' );
             }
             // Transient als persistenten Fallback setzen (überlebt Cache-Neustart).

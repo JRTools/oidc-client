@@ -36,7 +36,7 @@ class ProfileTest extends WpTestCase {
 
     public function test_lock_email_option_disabled_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_lock_email' ? '' : $default;
+            return $key === 'jrtools_oidc_lock_email' ? '' : $default;
         } );
         Functions\expect( 'get_user_meta' )->never();
 
@@ -51,7 +51,7 @@ class ProfileTest extends WpTestCase {
 
     public function test_lock_email_not_update_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_lock_email' ? '1' : $default;
+            return $key === 'jrtools_oidc_lock_email' ? '1' : $default;
         } );
         Functions\expect( 'get_user_meta' )->never();
 
@@ -66,7 +66,7 @@ class ProfileTest extends WpTestCase {
 
     public function test_lock_email_no_oidc_subject_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_lock_email' ? '1' : $default;
+            return $key === 'jrtools_oidc_lock_email' ? '1' : $default;
         } );
         Functions\when( 'get_user_meta' )->justReturn( '' );
         Functions\expect( 'get_user_by' )->never();
@@ -82,7 +82,7 @@ class ProfileTest extends WpTestCase {
 
     public function test_lock_email_same_email_no_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_lock_email' ? '1' : $default;
+            return $key === 'jrtools_oidc_lock_email' ? '1' : $default;
         } );
         Functions\when( 'get_user_meta' )->justReturn( 'sub-123' );
 
@@ -103,7 +103,7 @@ class ProfileTest extends WpTestCase {
 
     public function test_lock_email_different_email_adds_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_lock_email' ? '1' : $default;
+            return $key === 'jrtools_oidc_lock_email' ? '1' : $default;
         } );
         Functions\when( 'get_user_meta' )->justReturn( 'sub-123' );
         Functions\when( '__' )->returnArg();
@@ -120,7 +120,7 @@ class ProfileTest extends WpTestCase {
         $profile = new OIDC_Profile();
         $profile->maybe_lock_email( $errors, true, $user );
 
-        $this->assertSame( 'oidc_email_locked', $errors->code );
+        $this->assertSame( 'jrtools_oidc_email_locked', $errors->code );
         $this->assertSame( 'original@example.com', $user->user_email );
     }
 
@@ -130,7 +130,7 @@ class ProfileTest extends WpTestCase {
 
     public function test_lock_password_option_disabled_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_lock_password' ? '' : $default;
+            return $key === 'jrtools_oidc_lock_password' ? '' : $default;
         } );
         Functions\expect( 'get_user_meta' )->never();
 
@@ -145,7 +145,7 @@ class ProfileTest extends WpTestCase {
 
     public function test_lock_password_no_oidc_subject_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_lock_password' ? '1' : $default;
+            return $key === 'jrtools_oidc_lock_password' ? '1' : $default;
         } );
         Functions\when( 'get_user_meta' )->justReturn( '' );
 
@@ -161,7 +161,7 @@ class ProfileTest extends WpTestCase {
 
     public function test_lock_password_no_post_pass_no_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_lock_password' ? '1' : $default;
+            return $key === 'jrtools_oidc_lock_password' ? '1' : $default;
         } );
         Functions\when( 'get_user_meta' )->justReturn( 'sub-123' );
 
@@ -179,7 +179,7 @@ class ProfileTest extends WpTestCase {
 
     public function test_lock_password_with_post_pass_adds_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_lock_password' ? '1' : $default;
+            return $key === 'jrtools_oidc_lock_password' ? '1' : $default;
         } );
         Functions\when( 'get_user_meta' )->justReturn( 'sub-123' );
         Functions\when( '__' )->returnArg();
@@ -193,7 +193,7 @@ class ProfileTest extends WpTestCase {
         $profile = new OIDC_Profile();
         $profile->maybe_lock_password( $errors, true, $user );
 
-        $this->assertSame( 'oidc_password_locked', $errors->code );
+        $this->assertSame( 'jrtools_oidc_password_locked', $errors->code );
     }
 
     // -------------------------------------------------------------------------
@@ -209,7 +209,7 @@ class ProfileTest extends WpTestCase {
     }
 
     public function test_initiate_link_login_wrong_value_returns_early() {
-        $_GET['oidc_link'] = '0';
+        $_GET['jrtools_oidc_link'] = '0';
         Functions\expect( 'is_user_logged_in' )->never();
 
         $profile = new OIDC_Profile();
@@ -218,7 +218,7 @@ class ProfileTest extends WpTestCase {
     }
 
     public function test_initiate_link_login_not_logged_in_returns_early() {
-        $_GET['oidc_link'] = '1';
+        $_GET['jrtools_oidc_link'] = '1';
         Functions\when( 'is_user_logged_in' )->justReturn( false );
         Functions\expect( 'wp_verify_nonce' )->never();
 
@@ -228,8 +228,8 @@ class ProfileTest extends WpTestCase {
     }
 
     public function test_initiate_link_login_invalid_nonce_calls_wp_die() {
-        $_GET['oidc_link']       = '1';
-        $_GET['oidc_link_nonce'] = 'bad-nonce';
+        $_GET['jrtools_oidc_link']       = '1';
+        $_GET['jrtools_oidc_link_nonce'] = 'bad-nonce';
 
         Functions\when( 'is_user_logged_in' )->justReturn( true );
         Functions\when( 'sanitize_text_field' )->returnArg();
@@ -246,8 +246,8 @@ class ProfileTest extends WpTestCase {
     }
 
     public function test_initiate_link_login_valid_sets_transient_and_fires_action() {
-        $_GET['oidc_link']       = '1';
-        $_GET['oidc_link_nonce'] = 'valid-nonce';
+        $_GET['jrtools_oidc_link']       = '1';
+        $_GET['jrtools_oidc_link_nonce'] = 'valid-nonce';
 
         Functions\when( 'is_user_logged_in' )->justReturn( true );
         Functions\when( 'sanitize_text_field' )->returnArg();
@@ -256,11 +256,11 @@ class ProfileTest extends WpTestCase {
         Functions\when( 'get_current_user_id' )->justReturn( 7 );
         Functions\when( 'get_user_meta' )->justReturn( '' ); // kein bestehender Subject
         Functions\expect( 'set_transient' )->once()->with(
-            'oidc_link_pending_7',
+            'jrtools_oidc_link_pending_7',
             array( 'pending' => true, 'sub' => '' ),
             300
         );
-        Functions\expect( 'do_action' )->once()->with( 'oidc_initiate_login', array( 'prompt' => 'login' ) );
+        Functions\expect( 'do_action' )->once()->with( 'jrtools_oidc_initiate_login', array( 'prompt' => 'login' ) );
 
         $profile = new OIDC_Profile();
         $profile->initiate_link_login();
@@ -268,8 +268,8 @@ class ProfileTest extends WpTestCase {
     }
 
     public function test_initiate_link_login_stores_existing_subject_in_transient() {
-        $_GET['oidc_link']       = '1';
-        $_GET['oidc_link_nonce'] = 'valid-nonce';
+        $_GET['jrtools_oidc_link']       = '1';
+        $_GET['jrtools_oidc_link_nonce'] = 'valid-nonce';
 
         Functions\when( 'is_user_logged_in' )->justReturn( true );
         Functions\when( 'sanitize_text_field' )->returnArg();
@@ -278,11 +278,11 @@ class ProfileTest extends WpTestCase {
         Functions\when( 'get_current_user_id' )->justReturn( 7 );
         Functions\when( 'get_user_meta' )->justReturn( 'existing-sub-abc' );
         Functions\expect( 'set_transient' )->once()->with(
-            'oidc_link_pending_7',
+            'jrtools_oidc_link_pending_7',
             array( 'pending' => true, 'sub' => 'existing-sub-abc' ),
             300
         );
-        Functions\expect( 'do_action' )->once()->with( 'oidc_initiate_login', array( 'prompt' => 'login' ) );
+        Functions\expect( 'do_action' )->once()->with( 'jrtools_oidc_initiate_login', array( 'prompt' => 'login' ) );
 
         $profile = new OIDC_Profile();
         $profile->initiate_link_login();
@@ -316,7 +316,7 @@ class ProfileTest extends WpTestCase {
             throw new OidcTestException( $msg );
         } );
 
-        $_POST['oidc_unlink_nonce'] = 'bad-nonce';
+        $_POST['jrtools_oidc_unlink_nonce'] = 'bad-nonce';
 
         $this->expectException( OidcTestException::class );
         $profile = new OIDC_Profile();
@@ -329,13 +329,13 @@ class ProfileTest extends WpTestCase {
         Functions\when( 'sanitize_text_field' )->returnArg();
         Functions\when( 'wp_unslash' )->returnArg();
         Functions\when( 'wp_verify_nonce' )->justReturn( true );
-        Functions\expect( 'delete_user_meta' )->once()->with( 5, '_oidc_subject' );
+        Functions\expect( 'delete_user_meta' )->once()->with( 5, '_jrtools_oidc_subject' );
         Functions\when( 'get_edit_profile_url' )->justReturn( 'https://example.com/wp-admin/profile.php' );
         Functions\when( 'wp_safe_redirect' )->alias( function ( $url ) {
             throw new OidcTestException( $url );
         } );
 
-        $_POST['oidc_unlink_nonce'] = 'valid-nonce';
+        $_POST['jrtools_oidc_unlink_nonce'] = 'valid-nonce';
 
         $this->expectException( OidcTestException::class );
         $profile = new OIDC_Profile();
@@ -363,8 +363,8 @@ class ProfileTest extends WpTestCase {
     public function test_lock_profile_fields_ui_no_locks_outputs_nothing() {
         Functions\when( 'get_user_meta' )->justReturn( 'some-subject' );
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_lock_email' )    { return ''; }
-            if ( $key === 'oidc_lock_password' ) { return ''; }
+            if ( $key === 'jrtools_oidc_lock_email' )    { return ''; }
+            if ( $key === 'jrtools_oidc_lock_password' ) { return ''; }
             return $default;
         } );
 
@@ -382,8 +382,8 @@ class ProfileTest extends WpTestCase {
     public function test_lock_profile_fields_ui_email_lock_outputs_style() {
         Functions\when( 'get_user_meta' )->justReturn( 'some-subject' );
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_lock_email' )    { return '1'; }
-            if ( $key === 'oidc_lock_password' ) { return ''; }
+            if ( $key === 'jrtools_oidc_lock_email' )    { return '1'; }
+            if ( $key === 'jrtools_oidc_lock_password' ) { return ''; }
             return $default;
         } );
         Functions\when( 'wp_json_encode' )->alias( 'json_encode' );
@@ -404,8 +404,8 @@ class ProfileTest extends WpTestCase {
     public function test_lock_profile_fields_ui_password_lock_outputs_style() {
         Functions\when( 'get_user_meta' )->justReturn( 'some-subject' );
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_lock_email' )    { return ''; }
-            if ( $key === 'oidc_lock_password' ) { return '1'; }
+            if ( $key === 'jrtools_oidc_lock_email' )    { return ''; }
+            if ( $key === 'jrtools_oidc_lock_password' ) { return '1'; }
             return $default;
         } );
         Functions\when( 'wp_json_encode' )->alias( 'json_encode' );
@@ -451,7 +451,7 @@ class ProfileTest extends WpTestCase {
         Functions\when( 'esc_url' )->returnArg();
         Functions\when( 'admin_url' )->justReturn( 'https://example.com/wp-admin/admin-post.php' );
         Functions\when( 'wp_nonce_field' )->alias( function () {
-            echo '<input type="hidden" name="oidc_unlink_nonce" value="nonce123">';
+            echo '<input type="hidden" name="jrtools_oidc_unlink_nonce" value="nonce123">';
         } );
         Functions\when( 'esc_attr_e' )->justReturn( null );
 
@@ -463,7 +463,7 @@ class ProfileTest extends WpTestCase {
         $profile->render_profile_section( $user );
         $output = ob_get_clean();
 
-        $this->assertStringContainsString( 'oidc_unlink', $output );
+        $this->assertStringContainsString( 'jrtools_oidc_unlink', $output );
         $this->assertStringContainsString( 'button', $output );
     }
 
@@ -472,7 +472,7 @@ class ProfileTest extends WpTestCase {
         Functions\when( 'get_current_user_id' )->justReturn( 1 );
         Functions\when( 'esc_html_e' )->justReturn( null );
         Functions\when( 'esc_url' )->returnArg();
-        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_link=1' );
+        Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?jrtools_oidc_link=1' );
         Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
         Functions\when( 'wp_create_nonce' )->justReturn( 'nonce123' );
 
@@ -614,7 +614,7 @@ class ProfileTest extends WpTestCase {
             }
         } );
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_sync_avatar' ) { return '1'; }
+            if ( $key === 'jrtools_oidc_sync_avatar' ) { return '1'; }
             return $default;
         } );
 

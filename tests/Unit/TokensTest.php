@@ -108,7 +108,7 @@ class TokensTest extends WpTestCase {
     public function test_get_id_token_returns_empty_when_no_meta() {
         Functions\expect( 'get_user_meta' )
             ->once()
-            ->with( 1, '_oidc_id_token', true )
+            ->with( 1, '_jrtools_oidc_id_token', true )
             ->andReturn( '' );
 
         $tokens = new OIDC_Tokens();
@@ -125,7 +125,7 @@ class TokensTest extends WpTestCase {
 
         Functions\expect( 'get_user_meta' )
             ->once()
-            ->with( 42, '_oidc_id_token', true )
+            ->with( 42, '_jrtools_oidc_id_token', true )
             ->andReturn( $encrypted );
 
         $result = $tokens->get_id_token( 42 );
@@ -138,10 +138,10 @@ class TokensTest extends WpTestCase {
 
     public function test_store_tokens_only_saves_id_token_when_refresh_disabled() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_enable_refresh' ) {
+            if ( $key === 'jrtools_oidc_enable_refresh' ) {
                 return '';
             }
-            if ( $key === 'oidc_token_encryption' ) {
+            if ( $key === 'jrtools_oidc_token_encryption' ) {
                 return '';
             }
             return $default;
@@ -149,7 +149,7 @@ class TokensTest extends WpTestCase {
 
         Functions\expect( 'update_user_meta' )
             ->once()
-            ->with( 1, '_oidc_id_token', 'my-id-token' );
+            ->with( 1, '_jrtools_oidc_id_token', 'my-id-token' );
 
         $tokens = new OIDC_Tokens();
         $tokens->store_tokens( 1, array(
@@ -162,10 +162,10 @@ class TokensTest extends WpTestCase {
 
     public function test_store_tokens_saves_all_tokens_when_refresh_enabled() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_enable_refresh' ) {
+            if ( $key === 'jrtools_oidc_enable_refresh' ) {
                 return '1';
             }
-            if ( $key === 'oidc_token_encryption' ) {
+            if ( $key === 'jrtools_oidc_token_encryption' ) {
                 return '';
             }
             return $default;
@@ -184,15 +184,15 @@ class TokensTest extends WpTestCase {
             'expires_in'   => 3600,
         ) );
 
-        $this->assertContains( '_oidc_id_token', $update_calls );
-        $this->assertContains( '_oidc_access_token', $update_calls );
-        $this->assertContains( '_oidc_refresh_token', $update_calls );
-        $this->assertContains( '_oidc_access_token_expires', $update_calls );
+        $this->assertContains( '_jrtools_oidc_id_token', $update_calls );
+        $this->assertContains( '_jrtools_oidc_access_token', $update_calls );
+        $this->assertContains( '_jrtools_oidc_refresh_token', $update_calls );
+        $this->assertContains( '_jrtools_oidc_access_token_expires', $update_calls );
     }
 
     public function test_store_tokens_skips_missing_id_token() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_enable_refresh' ) {
+            if ( $key === 'jrtools_oidc_enable_refresh' ) {
                 return '';
             }
             return $default;
@@ -207,10 +207,10 @@ class TokensTest extends WpTestCase {
 
     public function test_store_tokens_default_expires_in_when_missing() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_enable_refresh' ) {
+            if ( $key === 'jrtools_oidc_enable_refresh' ) {
                 return '1';
             }
-            if ( $key === 'oidc_token_encryption' ) {
+            if ( $key === 'jrtools_oidc_token_encryption' ) {
                 return '';
             }
             return $default;
@@ -218,7 +218,7 @@ class TokensTest extends WpTestCase {
 
         $expires_value = null;
         Functions\when( 'update_user_meta' )->alias( function ( $_user_id, $meta_key, $value ) use ( &$expires_value ) {
-            if ( $meta_key === '_oidc_access_token_expires' ) {
+            if ( $meta_key === '_jrtools_oidc_access_token_expires' ) {
                 $expires_value = $value;
             }
         } );
@@ -243,10 +243,10 @@ class TokensTest extends WpTestCase {
         $tokens = new OIDC_Tokens();
         $tokens->clear_tokens( 99 );
 
-        $this->assertContains( '_oidc_access_token', $deleted );
-        $this->assertContains( '_oidc_access_token_expires', $deleted );
-        $this->assertContains( '_oidc_refresh_token', $deleted );
-        $this->assertNotContains( '_oidc_id_token', $deleted );
+        $this->assertContains( '_jrtools_oidc_access_token', $deleted );
+        $this->assertContains( '_jrtools_oidc_access_token_expires', $deleted );
+        $this->assertContains( '_jrtools_oidc_refresh_token', $deleted );
+        $this->assertNotContains( '_jrtools_oidc_id_token', $deleted );
     }
 
     public function test_clear_all_tokens_also_deletes_id_token() {
@@ -258,9 +258,9 @@ class TokensTest extends WpTestCase {
         $tokens = new OIDC_Tokens();
         $tokens->clear_all_tokens( 99 );
 
-        $this->assertContains( '_oidc_access_token', $deleted );
-        $this->assertContains( '_oidc_refresh_token', $deleted );
-        $this->assertContains( '_oidc_id_token', $deleted );
+        $this->assertContains( '_jrtools_oidc_access_token', $deleted );
+        $this->assertContains( '_jrtools_oidc_refresh_token', $deleted );
+        $this->assertContains( '_jrtools_oidc_id_token', $deleted );
     }
 
     // -------------------------------------------------------------------------
@@ -271,10 +271,10 @@ class TokensTest extends WpTestCase {
         Functions\when( 'get_option' )->justReturn( '' );
 
         Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
-            if ( $meta_key === '_oidc_access_token' ) {
+            if ( $meta_key === '_jrtools_oidc_access_token' ) {
                 return 'valid-access-token';
             }
-            if ( $meta_key === '_oidc_access_token_expires' ) {
+            if ( $meta_key === '_jrtools_oidc_access_token_expires' ) {
                 return (string) ( time() + 3600 );
             }
             return '';
@@ -292,13 +292,13 @@ class TokensTest extends WpTestCase {
         } );
 
         Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
-            if ( $meta_key === '_oidc_access_token' ) {
+            if ( $meta_key === '_jrtools_oidc_access_token' ) {
                 return ''; // kein Token
             }
-            if ( $meta_key === '_oidc_access_token_expires' ) {
+            if ( $meta_key === '_jrtools_oidc_access_token_expires' ) {
                 return '0';
             }
-            if ( $meta_key === '_oidc_refresh_token' ) {
+            if ( $meta_key === '_jrtools_oidc_refresh_token' ) {
                 return ''; // kein Refresh-Token
             }
             return '';
@@ -318,9 +318,9 @@ class TokensTest extends WpTestCase {
     /** Hilfsmethode: get_user_meta-Alias mit abgelaufenem Access-Token und vorhandenem Refresh-Token. */
     private function expiredTokenMeta( string $refresh_token ): callable {
         return function ( $_user_id, $meta_key, $_single ) use ( $refresh_token ) {
-            if ( $meta_key === '_oidc_access_token' ) { return ''; }
-            if ( $meta_key === '_oidc_access_token_expires' ) { return '0'; }
-            if ( $meta_key === '_oidc_refresh_token' ) { return $refresh_token; }
+            if ( $meta_key === '_jrtools_oidc_access_token' ) { return ''; }
+            if ( $meta_key === '_jrtools_oidc_access_token_expires' ) { return '0'; }
+            if ( $meta_key === '_jrtools_oidc_refresh_token' ) { return $refresh_token; }
             return '';
         };
     }
@@ -386,10 +386,10 @@ class TokensTest extends WpTestCase {
 
     public function test_get_valid_access_token_refreshes_with_client_secret_post() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_client_id' )         { return 'my-client'; }
-            if ( $key === 'oidc_client_secret' )     { return 'my-secret'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_client_id' )         { return 'my-client'; }
+            if ( $key === 'jrtools_oidc_client_secret' )     { return 'my-secret'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_post'; }
             return $default;
         } );
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
@@ -419,10 +419,10 @@ class TokensTest extends WpTestCase {
 
         // Nach dem Warten: frisches Token in user_meta.
         Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
-            if ( $meta_key === '_oidc_access_token' ) {
+            if ( $meta_key === '_jrtools_oidc_access_token' ) {
                 return 'freshly-refreshed-token';
             }
-            if ( $meta_key === '_oidc_access_token_expires' ) {
+            if ( $meta_key === '_jrtools_oidc_access_token_expires' ) {
                 return (string) ( time() + 3600 );
             }
             return '';
@@ -443,10 +443,10 @@ class TokensTest extends WpTestCase {
 
         // Nach dem Warten: Token immer noch abgelaufen.
         Functions\when( 'get_user_meta' )->alias( function ( $_user_id, $meta_key, $_single ) {
-            if ( $meta_key === '_oidc_access_token' ) {
+            if ( $meta_key === '_jrtools_oidc_access_token' ) {
                 return '';
             }
-            if ( $meta_key === '_oidc_access_token_expires' ) {
+            if ( $meta_key === '_jrtools_oidc_access_token_expires' ) {
                 return '0';
             }
             return '';
@@ -461,10 +461,10 @@ class TokensTest extends WpTestCase {
 
     public function test_get_valid_access_token_refreshes_with_client_secret_basic() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_client_id' )         { return 'my-client'; }
-            if ( $key === 'oidc_client_secret' )     { return 'my-secret'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_basic'; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_client_id' )         { return 'my-client'; }
+            if ( $key === 'jrtools_oidc_client_secret' )     { return 'my-secret'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_basic'; }
             return $default;
         } );
         Functions\when( 'get_user_meta' )->alias( $this->expiredTokenMeta( 'my-refresh-token' ) );
@@ -497,15 +497,15 @@ class TokensTest extends WpTestCase {
 
     public function test_oidc_tokens_stored_action_fires_after_store() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_enable_refresh' )    { return '1'; }
-            if ( $key === 'oidc_token_encryption' )  { return ''; }
+            if ( $key === 'jrtools_oidc_enable_refresh' )    { return '1'; }
+            if ( $key === 'jrtools_oidc_token_encryption' )  { return ''; }
             return $default;
         } );
         Functions\when( 'update_user_meta' )->justReturn( true );
 
         $fired = false;
         Functions\when( 'do_action' )->alias( function ( $hook ) use ( &$fired ) {
-            if ( 'oidc_tokens_stored' === $hook ) {
+            if ( 'jrtools_oidc_tokens_stored' === $hook ) {
                 $fired = true;
             }
         } );
@@ -518,15 +518,15 @@ class TokensTest extends WpTestCase {
 
     public function test_oidc_tokens_stored_action_does_not_fire_when_refresh_disabled() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_enable_refresh' )   { return ''; }
-            if ( $key === 'oidc_token_encryption' ) { return ''; }
+            if ( $key === 'jrtools_oidc_enable_refresh' )   { return ''; }
+            if ( $key === 'jrtools_oidc_token_encryption' ) { return ''; }
             return $default;
         } );
         Functions\when( 'update_user_meta' )->justReturn( true );
 
         $fired = false;
         Functions\when( 'do_action' )->alias( function ( $hook ) use ( &$fired ) {
-            if ( 'oidc_tokens_stored' === $hook ) {
+            if ( 'jrtools_oidc_tokens_stored' === $hook ) {
                 $fired = true;
             }
         } );
@@ -541,18 +541,18 @@ class TokensTest extends WpTestCase {
         Functions\when( 'wp_cache_add' )->justReturn( true );
         Functions\when( 'wp_cache_delete' )->justReturn( true );
         Functions\when( 'get_user_meta' )->alias( function ( $_id, $key ) {
-            if ( $key === '_oidc_access_token' )         { return ''; }
-            if ( $key === '_oidc_access_token_expires' ) { return 0; }
-            if ( $key === '_oidc_refresh_token' )        { return 'refresh-tok'; }
+            if ( $key === '_jrtools_oidc_access_token' )         { return ''; }
+            if ( $key === '_jrtools_oidc_access_token_expires' ) { return 0; }
+            if ( $key === '_jrtools_oidc_refresh_token' )        { return 'refresh-tok'; }
             return '';
         } );
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_client_id' )         { return 'client'; }
-            if ( $key === 'oidc_client_secret' )     { return 'secret'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
-            if ( $key === 'oidc_enable_refresh' )    { return '1'; }
-            if ( $key === 'oidc_token_encryption' )  { return ''; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_client_id' )         { return 'client'; }
+            if ( $key === 'jrtools_oidc_client_secret' )     { return 'secret'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'jrtools_oidc_enable_refresh' )    { return '1'; }
+            if ( $key === 'jrtools_oidc_token_encryption' )  { return ''; }
             return $default;
         } );
         Functions\when( 'sanitize_text_field' )->returnArg();
@@ -565,7 +565,7 @@ class TokensTest extends WpTestCase {
 
         $fired = false;
         Functions\when( 'do_action' )->alias( function ( $hook ) use ( &$fired ) {
-            if ( 'oidc_tokens_refreshed' === $hook ) {
+            if ( 'jrtools_oidc_tokens_refreshed' === $hook ) {
                 $fired = true;
             }
         } );

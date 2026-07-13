@@ -142,11 +142,11 @@ class AdminTest extends WpTestCase {
         Functions\when( 'esc_attr' )->returnArg();
 
         ob_start();
-        $this->admin->fields->field_text( array( 'option' => 'oidc_client_id' ) );
+        $this->admin->fields->field_text( array( 'option' => 'jrtools_oidc_client_id' ) );
         $output = ob_get_clean();
 
         $this->assertStringContainsString( 'type="text"', $output );
-        $this->assertStringContainsString( 'oidc_client_id', $output );
+        $this->assertStringContainsString( 'jrtools_oidc_client_id', $output );
         $this->assertStringContainsString( 'my-client-id', $output );
     }
 
@@ -157,7 +157,7 @@ class AdminTest extends WpTestCase {
 
         ob_start();
         $this->admin->fields->field_text( array(
-            'option'      => 'oidc_client_id',
+            'option'      => 'jrtools_oidc_client_id',
             'description' => 'Meine Beschreibung',
         ) );
         $output = ob_get_clean();
@@ -174,7 +174,7 @@ class AdminTest extends WpTestCase {
 
         ob_start();
         $this->admin->fields->field_text( array(
-            'option'  => 'oidc_scopes',
+            'option'  => 'jrtools_oidc_scopes',
             'default' => 'openid email profile',
         ) );
         $output = ob_get_clean();
@@ -191,11 +191,11 @@ class AdminTest extends WpTestCase {
         Functions\when( 'esc_attr' )->returnArg();
 
         ob_start();
-        $this->admin->fields->field_url( array( 'option' => 'oidc_token_endpoint' ) );
+        $this->admin->fields->field_url( array( 'option' => 'jrtools_oidc_token_endpoint' ) );
         $output = ob_get_clean();
 
         $this->assertStringContainsString( 'type="url"', $output );
-        $this->assertStringContainsString( 'oidc_token_endpoint', $output );
+        $this->assertStringContainsString( 'jrtools_oidc_token_endpoint', $output );
         $this->assertStringContainsString( 'https://provider.example.com/token', $output );
     }
 
@@ -208,11 +208,11 @@ class AdminTest extends WpTestCase {
         Functions\when( 'esc_attr' )->returnArg();
 
         ob_start();
-        $this->admin->fields->field_password( array( 'option' => 'oidc_client_secret' ) );
+        $this->admin->fields->field_password( array( 'option' => 'jrtools_oidc_client_secret' ) );
         $output = ob_get_clean();
 
         $this->assertStringContainsString( 'type="password"', $output );
-        $this->assertStringContainsString( 'oidc_client_secret', $output );
+        $this->assertStringContainsString( 'jrtools_oidc_client_secret', $output );
         $this->assertStringContainsString( 'supersecret', $output );
         $this->assertStringContainsString( 'autocomplete="new-password"', $output );
     }
@@ -230,7 +230,7 @@ class AdminTest extends WpTestCase {
         } );
 
         ob_start();
-        $this->admin->fields->field_checkbox( array( 'option' => 'oidc_create_user', 'description' => '' ) );
+        $this->admin->fields->field_checkbox( array( 'option' => 'jrtools_oidc_create_user', 'description' => '' ) );
         $output = ob_get_clean();
 
         $this->assertStringContainsString( 'checked', $output );
@@ -246,7 +246,7 @@ class AdminTest extends WpTestCase {
         } );
 
         ob_start();
-        $this->admin->fields->field_checkbox( array( 'option' => 'oidc_create_user', 'description' => '' ) );
+        $this->admin->fields->field_checkbox( array( 'option' => 'jrtools_oidc_create_user', 'description' => '' ) );
         $output = ob_get_clean();
 
         $this->assertStringNotContainsString( 'checked', $output );
@@ -321,7 +321,7 @@ class AdminTest extends WpTestCase {
         $output = ob_get_clean();
 
         $this->assertStringContainsString( 'type="url"', $output );
-        $this->assertStringContainsString( 'oidc_discovery_url', $output );
+        $this->assertStringContainsString( 'jrtools_oidc_discovery_url', $output );
         $this->assertStringContainsString( 'oidc-fetch-discovery', $output );
     }
 

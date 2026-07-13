@@ -72,10 +72,10 @@ class AuthTest extends WpTestCase {
      */
     private function setUpInitiateLoginMocks( string $pkce = '', string $scopes = 'openid email' ): void {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) use ( $pkce, $scopes ) {
-            if ( $key === 'oidc_client_id' )              { return 'my-client'; }
-            if ( $key === 'oidc_authorization_endpoint' ) { return 'https://provider.example.com/auth'; }
-            if ( $key === 'oidc_scopes' )                 { return $scopes; }
-            if ( $key === 'oidc_pkce_supported' )         { return $pkce; }
+            if ( $key === 'jrtools_oidc_client_id' )              { return 'my-client'; }
+            if ( $key === 'jrtools_oidc_authorization_endpoint' ) { return 'https://provider.example.com/auth'; }
+            if ( $key === 'jrtools_oidc_scopes' )                 { return $scopes; }
+            if ( $key === 'jrtools_oidc_pkce_supported' )         { return $pkce; }
             return $default;
         } );
         Functions\when( 'set_transient' )->justReturn( true );
@@ -119,7 +119,7 @@ class AuthTest extends WpTestCase {
 
     public function test_check_session_validity_disabled_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_session_management' ? '' : $default;
+            return $key === 'jrtools_oidc_session_management' ? '' : $default;
         } );
         Functions\expect( 'is_user_logged_in' )->never();
 
@@ -129,10 +129,10 @@ class AuthTest extends WpTestCase {
 
     public function test_check_session_validity_refresh_disabled_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_session_management' ) {
+            if ( $key === 'jrtools_oidc_session_management' ) {
                 return '1';
             }
-            if ( $key === 'oidc_enable_refresh' ) {
+            if ( $key === 'jrtools_oidc_enable_refresh' ) {
                 return '';
             }
             return $default;
@@ -145,10 +145,10 @@ class AuthTest extends WpTestCase {
 
     public function test_check_session_validity_not_logged_in_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_session_management' ) {
+            if ( $key === 'jrtools_oidc_session_management' ) {
                 return '1';
             }
-            if ( $key === 'oidc_enable_refresh' ) {
+            if ( $key === 'jrtools_oidc_enable_refresh' ) {
                 return '1';
             }
             return $default;
@@ -162,10 +162,10 @@ class AuthTest extends WpTestCase {
 
     public function test_check_session_validity_no_oidc_subject_returns_early() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_session_management' ) {
+            if ( $key === 'jrtools_oidc_session_management' ) {
                 return '1';
             }
-            if ( $key === 'oidc_enable_refresh' ) {
+            if ( $key === 'jrtools_oidc_enable_refresh' ) {
                 return '1';
             }
             return $default;
@@ -328,7 +328,7 @@ class AuthTest extends WpTestCase {
     public function test_validate_id_token_issuer_mismatch_returns_wp_error() {
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_issuer' ) { return 'https://expected.example.com'; }
+            if ( $key === 'jrtools_oidc_issuer' ) { return 'https://expected.example.com'; }
             return $default;
         } );
 
@@ -342,8 +342,8 @@ class AuthTest extends WpTestCase {
     public function test_validate_id_token_audience_mismatch_returns_wp_error() {
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_issuer' )    { return ''; }
-            if ( $key === 'oidc_client_id' ) { return 'my-client'; }
+            if ( $key === 'jrtools_oidc_issuer' )    { return ''; }
+            if ( $key === 'jrtools_oidc_client_id' ) { return 'my-client'; }
             return $default;
         } );
 
@@ -387,7 +387,7 @@ class AuthTest extends WpTestCase {
 
     public function test_fetch_userinfo_http_error_returns_wp_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
+            if ( $key === 'jrtools_oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
             return $default;
         } );
         Functions\when( 'wp_remote_get' )->justReturn( new WP_Error( 'http_request_failed', 'timeout' ) );
@@ -399,7 +399,7 @@ class AuthTest extends WpTestCase {
 
     public function test_fetch_userinfo_no_email_returns_wp_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
+            if ( $key === 'jrtools_oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
             return $default;
         } );
         Functions\when( 'wp_remote_get' )->justReturn( array() );
@@ -415,7 +415,7 @@ class AuthTest extends WpTestCase {
 
     public function test_fetch_userinfo_success_returns_data() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
+            if ( $key === 'jrtools_oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
             return $default;
         } );
         Functions\when( 'wp_remote_get' )->justReturn( array() );
@@ -432,7 +432,7 @@ class AuthTest extends WpTestCase {
 
     public function test_fetch_userinfo_401_returns_wp_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
+            if ( $key === 'jrtools_oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
             return $default;
         } );
         Functions\when( 'wp_remote_get' )->justReturn( array() );
@@ -448,7 +448,7 @@ class AuthTest extends WpTestCase {
 
     public function test_fetch_userinfo_403_returns_wp_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
+            if ( $key === 'jrtools_oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
             return $default;
         } );
         Functions\when( 'wp_remote_get' )->justReturn( array() );
@@ -464,7 +464,7 @@ class AuthTest extends WpTestCase {
 
     public function test_fetch_userinfo_network_error_returns_wp_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
+            if ( $key === 'jrtools_oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
             return $default;
         } );
         Functions\when( 'wp_remote_get' )->justReturn( new WP_Error( 'http_request_failed', 'Connection timed out' ) );
@@ -481,8 +481,8 @@ class AuthTest extends WpTestCase {
 
     public function test_check_session_validity_expired_token_logs_out() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_session_management' ) { return '1'; }
-            if ( $key === 'oidc_enable_refresh' )     { return '1'; }
+            if ( $key === 'jrtools_oidc_session_management' ) { return '1'; }
+            if ( $key === 'jrtools_oidc_enable_refresh' )     { return '1'; }
             return $default;
         } );
         Functions\when( 'is_user_logged_in' )->justReturn( true );
@@ -498,9 +498,9 @@ class AuthTest extends WpTestCase {
         Functions\when( 'wp_cache_add' )->justReturn( true );
         Functions\when( 'wp_cache_delete' )->justReturn( true );
         Functions\when( 'get_user_meta' )->alias( function ( $id, $key, $single ) {
-            if ( $key === '_oidc_subject' ) { return 'user-sub'; }
-            if ( $key === '_oidc_access_token_expires' ) { return time() - 100; }
-            if ( $key === '_oidc_refresh_token' ) { return ''; }
+            if ( $key === '_jrtools_oidc_subject' ) { return 'user-sub'; }
+            if ( $key === '_jrtools_oidc_access_token_expires' ) { return time() - 100; }
+            if ( $key === '_jrtools_oidc_refresh_token' ) { return ''; }
             return '';
         } );
         Functions\when( 'current_time' )->justReturn( '2026-01-01 12:00:00' );
@@ -519,17 +519,17 @@ class AuthTest extends WpTestCase {
 
     public function test_check_session_validity_valid_token_does_nothing() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_session_management' ) { return '1'; }
-            if ( $key === 'oidc_enable_refresh' )     { return '1'; }
+            if ( $key === 'jrtools_oidc_session_management' ) { return '1'; }
+            if ( $key === 'jrtools_oidc_enable_refresh' )     { return '1'; }
             if ( $key === 'oidc_enable_encrypt' )     { return ''; }
             return $default;
         } );
         Functions\when( 'is_user_logged_in' )->justReturn( true );
         Functions\when( 'get_current_user_id' )->justReturn( 3 );
         Functions\when( 'get_user_meta' )->alias( function ( $id, $key, $single ) {
-            if ( $key === '_oidc_subject' )              { return 'sub-xyz'; }
-            if ( $key === '_oidc_access_token' )         { return 'valid-token'; }
-            if ( $key === '_oidc_access_token_expires' ) { return (string) ( time() + 7200 ); }
+            if ( $key === '_jrtools_oidc_subject' )              { return 'sub-xyz'; }
+            if ( $key === '_jrtools_oidc_access_token' )         { return 'valid-token'; }
+            if ( $key === '_jrtools_oidc_access_token_expires' ) { return (string) ( time() + 7200 ); }
             return '';
         } );
         Functions\expect( 'wp_logout' )->never();
@@ -545,9 +545,9 @@ class AuthTest extends WpTestCase {
     public function test_validate_id_token_audience_as_array_returns_claims() {
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_issuer' )    { return ''; }
-            if ( $key === 'oidc_client_id' ) { return 'my-client'; }
-            if ( $key === 'oidc_jwks_uri' )  { return ''; }
+            if ( $key === 'jrtools_oidc_issuer' )    { return ''; }
+            if ( $key === 'jrtools_oidc_client_id' ) { return 'my-client'; }
+            if ( $key === 'jrtools_oidc_jwks_uri' )  { return ''; }
             return $default;
         } );
 
@@ -599,23 +599,23 @@ class AuthTest extends WpTestCase {
         Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
         Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_client_id' )         { return 'client123'; }
-            if ( $key === 'oidc_client_secret' )     { return 'secret'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
-            if ( $key === 'oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
-            if ( $key === 'oidc_issuer' )            { return ''; }
-            if ( $key === 'oidc_jwks_uri' )          { return ''; }
-            if ( $key === 'oidc_active_claim' )      { return ''; }
-            if ( $key === 'oidc_sync_avatar' )       { return ''; }
-            if ( $key === 'oidc_remember_me' )       { return 'never'; }
-            if ( $key === 'oidc_enable_refresh' )    { return ''; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_client_id' )         { return 'client123'; }
+            if ( $key === 'jrtools_oidc_client_secret' )     { return 'secret'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'jrtools_oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
+            if ( $key === 'jrtools_oidc_issuer' )            { return ''; }
+            if ( $key === 'jrtools_oidc_jwks_uri' )          { return ''; }
+            if ( $key === 'jrtools_oidc_active_claim' )      { return ''; }
+            if ( $key === 'jrtools_oidc_sync_avatar' )       { return ''; }
+            if ( $key === 'jrtools_oidc_remember_me' )       { return 'never'; }
+            if ( $key === 'jrtools_oidc_enable_refresh' )    { return ''; }
             return $default;
         } );
         Functions\when( 'get_transient' )->alias( function ( $key ) {
-            if ( strpos( $key, 'oidc_state_' ) === 0 )  { return 1; }
-            if ( strpos( $key, 'oidc_pkce_' ) === 0 )   { return ''; }
-            if ( strpos( $key, 'oidc_nonce_' ) === 0 )  { return 1; }
+            if ( strpos( $key, 'jrtools_oidc_state_' ) === 0 )  { return 1; }
+            if ( strpos( $key, 'jrtools_oidc_pkce_' ) === 0 )   { return ''; }
+            if ( strpos( $key, 'jrtools_oidc_nonce_' ) === 0 )  { return 1; }
             return false;
         } );
         Functions\when( 'delete_transient' )->justReturn( true );
@@ -678,17 +678,17 @@ class AuthTest extends WpTestCase {
         Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
         Functions\when( 'current_time' )->justReturn( '2026-01-01 12:00:00' );
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_client_id' )         { return 'client-x'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
-            if ( $key === 'oidc_issuer' )            { return ''; }
-            if ( $key === 'oidc_jwks_uri' )          { return ''; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_client_id' )         { return 'client-x'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'jrtools_oidc_issuer' )            { return ''; }
+            if ( $key === 'jrtools_oidc_jwks_uri' )          { return ''; }
             return $default;
         } );
         Functions\when( 'get_transient' )->alias( function ( $key ) {
-            if ( strpos( $key, 'oidc_state_' ) === 0 ) { return 1; }
-            if ( strpos( $key, 'oidc_pkce_' ) === 0 )  { return ''; }
-            if ( strpos( $key, 'oidc_nonce_' ) === 0 ) { return false; }
+            if ( strpos( $key, 'jrtools_oidc_state_' ) === 0 ) { return 1; }
+            if ( strpos( $key, 'jrtools_oidc_pkce_' ) === 0 )  { return ''; }
+            if ( strpos( $key, 'jrtools_oidc_nonce_' ) === 0 ) { return false; }
             return false;
         } );
         Functions\when( 'delete_transient' )->justReturn( true );
@@ -745,21 +745,21 @@ class AuthTest extends WpTestCase {
         Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
         Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )   { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_client_id' )         { return 'client123'; }
-            if ( $key === 'oidc_client_secret' )     { return 'secret123'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
-            if ( $key === 'oidc_userinfo_endpoint' ) { return ''; }
-            if ( $key === 'oidc_issuer' )            { return ''; }
-            if ( $key === 'oidc_scopes' )            { return 'openid email'; }
-            if ( $key === 'oidc_jwks_uri' )          { return ''; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )   { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_client_id' )         { return 'client123'; }
+            if ( $key === 'jrtools_oidc_client_secret' )     { return 'secret123'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'jrtools_oidc_userinfo_endpoint' ) { return ''; }
+            if ( $key === 'jrtools_oidc_issuer' )            { return ''; }
+            if ( $key === 'jrtools_oidc_scopes' )            { return 'openid email'; }
+            if ( $key === 'jrtools_oidc_jwks_uri' )          { return ''; }
             return $default;
         } );
         Functions\when( 'get_transient' )->alias( function ( $key ) {
-            if ( strpos( $key, 'oidc_state_' ) === 0 )       { return array( 'nonce' => 'nonce123' ); }
-            if ( strpos( $key, 'oidc_pkce_' ) === 0 )         { return ''; }
-            if ( strpos( $key, 'oidc_nonce_' ) === 0 )        { return '1'; }
-            if ( strpos( $key, 'oidc_link_pending_' ) === 0 ) { return array( 'pending' => true, 'sub' => '' ); }
+            if ( strpos( $key, 'jrtools_oidc_state_' ) === 0 )       { return array( 'nonce' => 'nonce123' ); }
+            if ( strpos( $key, 'jrtools_oidc_pkce_' ) === 0 )         { return ''; }
+            if ( strpos( $key, 'jrtools_oidc_nonce_' ) === 0 )        { return '1'; }
+            if ( strpos( $key, 'jrtools_oidc_link_pending_' ) === 0 ) { return array( 'pending' => true, 'sub' => '' ); }
             return false;
         } );
         Functions\when( 'delete_transient' )->justReturn( true );
@@ -834,20 +834,20 @@ class AuthTest extends WpTestCase {
         } );
         Functions\when( 'wp_login_url' )->justReturn( 'https://example.com/wp-login.php' );
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_client_id' )         { return 'client123'; }
-            if ( $key === 'oidc_client_secret' )     { return 'secret123'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
-            if ( $key === 'oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
-            if ( $key === 'oidc_issuer' )            { return ''; }
-            if ( $key === 'oidc_jwks_uri' )          { return ''; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_client_id' )         { return 'client123'; }
+            if ( $key === 'jrtools_oidc_client_secret' )     { return 'secret123'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'jrtools_oidc_userinfo_endpoint' ) { return 'https://provider.example.com/userinfo'; }
+            if ( $key === 'jrtools_oidc_issuer' )            { return ''; }
+            if ( $key === 'jrtools_oidc_jwks_uri' )          { return ''; }
             return $default;
         } );
         Functions\when( 'get_transient' )->alias( function ( $key ) use ( $transient_val ) {
-            if ( strpos( $key, 'oidc_state_' ) === 0 )        { return 1; }
-            if ( strpos( $key, 'oidc_pkce_' ) === 0 )         { return ''; }
-            if ( strpos( $key, 'oidc_nonce_' ) === 0 )        { return 1; }
-            if ( strpos( $key, 'oidc_link_pending_' ) === 0 ) { return $transient_val; }
+            if ( strpos( $key, 'jrtools_oidc_state_' ) === 0 )        { return 1; }
+            if ( strpos( $key, 'jrtools_oidc_pkce_' ) === 0 )         { return ''; }
+            if ( strpos( $key, 'jrtools_oidc_nonce_' ) === 0 )        { return 1; }
+            if ( strpos( $key, 'jrtools_oidc_link_pending_' ) === 0 ) { return $transient_val; }
             return false;
         } );
         Functions\when( 'delete_transient' )->justReturn( true );
@@ -919,7 +919,7 @@ class AuthTest extends WpTestCase {
     public function test_oidc_scopes_filter_changes_scopes_in_auth_request() {
         $this->setUpInitiateLoginMocks( '' );
         Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
-            if ( 'oidc_scopes' === $hook ) {
+            if ( 'jrtools_oidc_scopes' === $hook ) {
                 return 'openid email profile phone';
             }
             return $value;
@@ -937,7 +937,7 @@ class AuthTest extends WpTestCase {
     public function test_oidc_auth_params_filter_adds_custom_param() {
         $this->setUpInitiateLoginMocks( '' );
         Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
-            if ( 'oidc_auth_params' === $hook ) {
+            if ( 'jrtools_oidc_auth_params' === $hook ) {
                 $value['ui_locales'] = 'de';
             }
             return $value;
@@ -962,7 +962,7 @@ class AuthTest extends WpTestCase {
         $linkedUserId = null;
         $linkedSub    = null;
         Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$linkedUserId, &$linkedSub ) {
-            if ( 'oidc_account_linked' === $hook ) {
+            if ( 'jrtools_oidc_account_linked' === $hook ) {
                 $linkedUserId = $args[0];
                 $linkedSub    = $args[1];
             }

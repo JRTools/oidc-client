@@ -146,9 +146,9 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          sed -i "s/^\( \* Version:\s*\).*/\1${VERSION}/" oidc-client.php
-          sed -i "s/^define( 'OIDC_CLIENT_VERSION', '[^']*' );/define( 'OIDC_CLIENT_VERSION', '${VERSION}' );/" oidc-client.php
-          sed -i "s/^\( \* Requires at least:\s*\).*/\1${WP_REQUIRES_AT_LEAST}/" oidc-client.php
+          sed -i "s/^\( \* Version:\s*\).*/\1${VERSION}/" jrtools-openid-connect.php
+          sed -i "s/^define( 'JRTOOLS_OIDC_VERSION', '[^']*' );/define( 'JRTOOLS_OIDC_VERSION', '${VERSION}' );/" jrtools-openid-connect.php
+          sed -i "s/^\( \* Requires at least:\s*\).*/\1${WP_REQUIRES_AT_LEAST}/" jrtools-openid-connect.php
           sed -i "s/WordPress-[0-9][0-9]*\.[0-9][0-9]*%2B/WordPress-${WP_REQUIRES_AT_LEAST}%2B/" README.md
           sed -i "s/WordPress [0-9][0-9]*\.[0-9][0-9]* oder höher (offiziell/WordPress ${WP_REQUIRES_AT_LEAST} oder höher (offiziell/" README.md
           sed -i "s/^Stable tag:.*/Stable tag: ${VERSION}/" readme.txt
@@ -168,10 +168,10 @@ jobs:
         env:
           VERSION: ${{ steps.version.outputs.VERSION }}
         run: |
-          ZIP="dist/oidc-client-${VERSION}.zip"
+          ZIP="dist/jrtools-openid-connect-${VERSION}.zip"
           echo "Prüfe ZIP-Integrität: ${ZIP}"
           unzip -t "${ZIP}"
-          sha256sum "${ZIP}" | tee "dist/oidc-client-${VERSION}.zip.sha256"
+          sha256sum "${ZIP}" | tee "dist/jrtools-openid-connect-${VERSION}.zip.sha256"
           echo "Größe: $(du -sh "${ZIP}" | cut -f1)"
 
       - name: GitHub Release erstellen
@@ -181,5 +181,5 @@ jobs:
           tag_name: ${{ github.ref_name }}
           generate_release_notes: true
           files: |
-            dist/oidc-client-${{ steps.version.outputs.VERSION }}.zip
-            dist/oidc-client-${{ steps.version.outputs.VERSION }}.zip.sha256
+            dist/jrtools-openid-connect-${{ steps.version.outputs.VERSION }}.zip
+            dist/jrtools-openid-connect-${{ steps.version.outputs.VERSION }}.zip.sha256

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-A WordPress plugin implementing OpenID Connect (OIDC) Authorization Code Flow with PKCE. Supports Keycloak, Microsoft Entra ID, Google, Okta, Auth0, and any OIDC-compliant provider.
+A WordPress plugin named JRTools OpenID Connect implementing OpenID Connect (OIDC) Authorization Code Flow with PKCE. Supports Keycloak, Microsoft Entra ID, Google, Okta, Auth0, and any OIDC-compliant provider.
 
 ## Commands
 
@@ -40,7 +40,7 @@ vendor/bin/infection
 
 ## Architecture
 
-**Initialization** (`oidc-client.php`):
+**Initialization** (`jrtools-openid-connect.php`):
 1. Activation hook → `OIDC_Log::install()` (creates DB log table)
 2. Requires all class files in dependency order
 3. On `plugins_loaded` → instantiates: `OIDC_Log`, `OIDC_Logout`, `OIDC_Profile`, `OIDC_Admin`, `OIDC_Auth`, `OIDC_Login`
@@ -97,7 +97,7 @@ When updating the matrix, these files must stay in sync:
 - `.github/workflows/ci.yml` — matrix `wp:`
 - `.github/workflows/release.yml` — `WP_TESTED_UP_TO`, `WP_REQUIRES_AT_LEAST`
 - `readme.txt` — `Tested up to`, `Requires at least`
-- `oidc-client.php` — `Requires at least` in plugin header
+- `jrtools-openid-connect.php` — `Requires at least` in plugin header
 
 ## External services
 

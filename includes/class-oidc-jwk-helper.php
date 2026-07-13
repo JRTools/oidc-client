@@ -17,7 +17,7 @@ class OIDC_JWK_Helper {
 	 * @return array|WP_Error
 	 */
 	public static function get_jwks( $jwks_uri ) {
-		$cache_key = 'oidc_jwks_' . md5( $jwks_uri );
+		$cache_key = 'jrtools_oidc_jwks_' . md5( $jwks_uri );
 		$cached    = get_transient( $cache_key );
 
 		if ( is_array( $cached ) && isset( $cached['keys'] ) ) {
@@ -38,14 +38,14 @@ class OIDC_JWK_Helper {
 			return new WP_Error(
 				'jwks_fetch_failed',
 				/* translators: %d: HTTP-Statuscode beim JWKS-Abruf */
-				sprintf( __( 'JWKS-Abruf fehlgeschlagen (HTTP %d).', 'oidc-client' ), $code )
+				sprintf( __( 'JWKS-Abruf fehlgeschlagen (HTTP %d).', 'jrtools-openid-connect' ), $code )
 			);
 		}
 
 		$data = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( ! is_array( $data ) || empty( $data['keys'] ) ) {
-			return new WP_Error( 'jwks_invalid', __( 'Ungültige JWKS-Antwort.', 'oidc-client' ) );
+			return new WP_Error( 'jwks_invalid', __( 'Ungültige JWKS-Antwort.', 'jrtools-openid-connect' ) );
 		}
 
 		set_transient( $cache_key, $data, HOUR_IN_SECONDS );
@@ -77,14 +77,14 @@ class OIDC_JWK_Helper {
 	 */
 	public static function jwk_to_pem( $jwk ) {
 		if ( ! isset( $jwk['n'] ) || ! isset( $jwk['e'] ) ) {
-			return new WP_Error( 'jwk_missing_params', __( 'JWK fehlen n oder e Parameter.', 'oidc-client' ) );
+			return new WP_Error( 'jwk_missing_params', __( 'JWK fehlen n oder e Parameter.', 'jrtools-openid-connect' ) );
 		}
 
 		$n = OIDC_JWT_Helper::base64url_decode( $jwk['n'] );
 		$e = OIDC_JWT_Helper::base64url_decode( $jwk['e'] );
 
 		if ( false === $n || false === $e ) {
-			return new WP_Error( 'jwk_decode_failed', __( 'JWK-Parameter konnten nicht dekodiert werden.', 'oidc-client' ) );
+			return new WP_Error( 'jwk_decode_failed', __( 'JWK-Parameter konnten nicht dekodiert werden.', 'jrtools-openid-connect' ) );
 		}
 
 		$n_hex = bin2hex( $n );

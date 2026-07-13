@@ -2,15 +2,15 @@
 # bin/build.sh – Plugin-ZIP für WordPress-Release erstellen
 #
 # Verwendung: bash bin/build.sh
-# Ausgabe:    dist/oidc-client-<VERSION>.zip
+# Ausgabe:    dist/jrtools-openid-connect-<VERSION>.zip
 #
 set -euo pipefail
 
-SLUG="oidc-client"
-VERSION=$(grep "^[ \t]*\* Version:" oidc-client.php | awk '{print $NF}')
+SLUG="jrtools-openid-connect"
+VERSION=$(grep "^[ \t]*\* Version:" jrtools-openid-connect.php | awk '{print $NF}')
 
 if [[ -z "${VERSION}" ]]; then
-    echo "FEHLER: Version konnte nicht aus oidc-client.php gelesen werden." >&2
+    echo "FEHLER: Version konnte nicht aus jrtools-openid-connect.php gelesen werden." >&2
     exit 1
 fi
 

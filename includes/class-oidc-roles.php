@@ -16,7 +16,7 @@ class OIDC_Roles {
      * @param array $userinfo
      */
     public function apply_role_mapping( $user_id, $userinfo ) {
-        $role_claim = get_option( 'oidc_role_claim', '' );
+        $role_claim = get_option( 'jrtools_oidc_role_claim', '' );
 
         if ( empty( $role_claim ) ) {
             return;
@@ -26,7 +26,7 @@ class OIDC_Roles {
             return;
         }
 
-        $mapping_json = get_option( 'oidc_role_mapping', '' );
+        $mapping_json = get_option( 'jrtools_oidc_role_mapping', '' );
         if ( empty( $mapping_json ) ) {
             return;
         }

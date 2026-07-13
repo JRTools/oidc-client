@@ -23,13 +23,13 @@ class OIDC_Token_Exchange {
      * @return array|WP_Error Token-Daten oder Fehler.
      */
     public function exchange_code_for_tokens( $code, $code_verifier ) {
-        $token_ep      = get_option( 'oidc_token_endpoint', '' );
-        $client_id     = get_option( 'oidc_client_id', '' );
-        $client_secret = get_option( 'oidc_client_secret', '' );
-        $auth_method   = get_option( 'oidc_token_auth_method', 'client_secret_post' );
+        $token_ep      = get_option( 'jrtools_oidc_token_endpoint', '' );
+        $client_id     = get_option( 'jrtools_oidc_client_id', '' );
+        $client_secret = get_option( 'jrtools_oidc_client_secret', '' );
+        $auth_method   = get_option( 'jrtools_oidc_token_auth_method', 'client_secret_post' );
 
         if ( empty( $token_ep ) ) {
-            return new WP_Error( 'no_token_endpoint', __( 'Token-Endpoint nicht konfiguriert.', 'oidc-client' ) );
+            return new WP_Error( 'no_token_endpoint', __( 'Token-Endpoint nicht konfiguriert.', 'jrtools-openid-connect' ) );
         }
 
         $body = array(
@@ -84,13 +84,13 @@ class OIDC_Token_Exchange {
             }
             $msg = sprintf(
                 /* translators: 1: Fehler-Code vom Token-Endpoint, 2: Fehlerbeschreibung oder leer */
-                __( 'Fehler vom Provider (Token-Endpoint): %1$s%2$s', 'oidc-client' ),
+                __( 'Fehler vom Provider (Token-Endpoint): %1$s%2$s', 'jrtools-openid-connect' ),
                 $error_code,
                 $error_desc ? ' – ' . $error_desc : ''
             );
 
             // Debug-Modus: nur sichere Metadaten (kein Response-Body mit Tokens)
-            if ( get_option( 'oidc_debug_mode', '' ) === '1' ) {
+            if ( get_option( 'jrtools_oidc_debug_mode', '' ) === '1' ) {
                 $msg .= ' | Auth-Method: ' . $auth_method;
                 $msg .= ' | HTTP: ' . $response_code;
             }
@@ -105,7 +105,7 @@ class OIDC_Token_Exchange {
             return new WP_Error(
                 'token_request_failed',
                 /* translators: %d: HTTP-Statuscode des Token-Endpoints */
-                sprintf( __( 'Token-Request fehlgeschlagen (HTTP %d).', 'oidc-client' ), $response_code )
+                sprintf( __( 'Token-Request fehlgeschlagen (HTTP %d).', 'jrtools-openid-connect' ), $response_code )
             );
         }
 

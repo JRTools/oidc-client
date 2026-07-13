@@ -11,14 +11,14 @@
 require_once __DIR__ . '/stubs/constants.php';
 
 // Plugin-spezifische Konstanten
-if ( ! defined( 'OIDC_CLIENT_VERSION' ) ) {
-    define( 'OIDC_CLIENT_VERSION', '1.0.0' );
+if ( ! defined( 'JRTOOLS_OIDC_VERSION' ) ) {
+    define( 'JRTOOLS_OIDC_VERSION', '1.0.0' );
 }
-if ( ! defined( 'OIDC_CLIENT_DIR' ) ) {
-    define( 'OIDC_CLIENT_DIR', __DIR__ . '/../' );
+if ( ! defined( 'JRTOOLS_OIDC_DIR' ) ) {
+    define( 'JRTOOLS_OIDC_DIR', __DIR__ . '/../' );
 }
-if ( ! defined( 'OIDC_CLIENT_URL' ) ) {
-    define( 'OIDC_CLIENT_URL', 'https://example.com/wp-content/plugins/oidc-client/' );
+if ( ! defined( 'JRTOOLS_OIDC_URL' ) ) {
+    define( 'JRTOOLS_OIDC_URL', 'https://example.com/wp-content/plugins/jrtools-openid-connect/' );
 }
 
 if ( ! class_exists( 'WP_Error' ) ) {

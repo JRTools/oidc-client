@@ -21,7 +21,7 @@ class RolesTest extends WpTestCase {
     }
 
     public function test_no_role_claim_option_does_nothing() {
-        $this->stub_get_option( array( 'oidc_role_claim' => '' ) );
+        $this->stub_get_option( array( 'jrtools_oidc_role_claim' => '' ) );
         Functions\expect( 'get_user_by' )->never();
 
         $roles = new OIDC_Roles();
@@ -30,7 +30,7 @@ class RolesTest extends WpTestCase {
     }
 
     public function test_no_claim_in_userinfo_does_nothing() {
-        $this->stub_get_option( array( 'oidc_role_claim' => 'roles' ) );
+        $this->stub_get_option( array( 'jrtools_oidc_role_claim' => 'roles' ) );
         Functions\expect( 'get_user_by' )->never();
 
         $roles = new OIDC_Roles();
@@ -40,8 +40,8 @@ class RolesTest extends WpTestCase {
 
     public function test_empty_mapping_json_does_nothing() {
         $this->stub_get_option( array(
-            'oidc_role_claim'   => 'roles',
-            'oidc_role_mapping' => '',
+            'jrtools_oidc_role_claim'   => 'roles',
+            'jrtools_oidc_role_mapping' => '',
         ) );
         Functions\expect( 'get_user_by' )->never();
 
@@ -52,8 +52,8 @@ class RolesTest extends WpTestCase {
 
     public function test_no_matching_mapping_does_not_change_role() {
         $this->stub_get_option( array(
-            'oidc_role_claim'   => 'roles',
-            'oidc_role_mapping' => json_encode( array( 'admin-group' => 'administrator' ) ),
+            'jrtools_oidc_role_claim'   => 'roles',
+            'jrtools_oidc_role_mapping' => json_encode( array( 'admin-group' => 'administrator' ) ),
         ) );
 
         $user_stub = new WP_User();
@@ -68,8 +68,8 @@ class RolesTest extends WpTestCase {
 
     public function test_single_match_calls_set_role() {
         $this->stub_get_option( array(
-            'oidc_role_claim'   => 'groups',
-            'oidc_role_mapping' => json_encode( array( 'editors' => 'editor' ) ),
+            'jrtools_oidc_role_claim'   => 'groups',
+            'jrtools_oidc_role_mapping' => json_encode( array( 'editors' => 'editor' ) ),
         ) );
 
         $user_stub     = new WP_User();
@@ -92,8 +92,8 @@ class RolesTest extends WpTestCase {
 
     public function test_claim_as_array_maps_multiple_roles() {
         $this->stub_get_option( array(
-            'oidc_role_claim'   => 'groups',
-            'oidc_role_mapping' => json_encode( array(
+            'jrtools_oidc_role_claim'   => 'groups',
+            'jrtools_oidc_role_mapping' => json_encode( array(
                 'editors' => 'editor',
                 'authors' => 'author',
             ) ),
@@ -119,8 +119,8 @@ class RolesTest extends WpTestCase {
 
     public function test_unknown_wp_role_is_skipped() {
         $this->stub_get_option( array(
-            'oidc_role_claim'   => 'roles',
-            'oidc_role_mapping' => json_encode( array( 'superuser' => 'nonexistent_role' ) ),
+            'jrtools_oidc_role_claim'   => 'roles',
+            'jrtools_oidc_role_mapping' => json_encode( array( 'superuser' => 'nonexistent_role' ) ),
         ) );
 
         $user_stub = new WP_User();

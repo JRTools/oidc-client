@@ -32,22 +32,22 @@ class OIDC_Admin_Fields {
 
 	/** Beschreibungstext für den Provider-Abschnitt. */
 	public function section_provider_description() {
-		echo '<p>' . esc_html__( 'Gib die Discovery-URL deines OIDC-Providers ein und klicke auf „Abrufen", um die Endpunkte automatisch zu befüllen.', 'oidc-client' ) . '</p>';
+		echo '<p>' . esc_html__( 'Gib die Discovery-URL deines OIDC-Providers ein und klicke auf „Abrufen", um die Endpunkte automatisch zu befüllen.', 'jrtools-openid-connect' ) . '</p>';
 	}
 
 	/** Beschreibungstext für den Rollen-Mapping-Abschnitt. */
 	public function section_roles_description() {
-		echo '<p>' . esc_html__( 'Ordne Werte aus dem Rollen-Claim WordPress-Rollen zu. Wird kein Mapping gefunden, bleibt die bestehende Rolle erhalten.', 'oidc-client' ) . '</p>';
+		echo '<p>' . esc_html__( 'Ordne Werte aus dem Rollen-Claim WordPress-Rollen zu. Wird kein Mapping gefunden, bleibt die bestehende Rolle erhalten.', 'jrtools-openid-connect' ) . '</p>';
 	}
 
 	/** Rendert das Feld für die Discovery-URL. */
 	public function field_discovery_url() {
 		?>
-		<input type="url" id="oidc_discovery_url" name="oidc_discovery_url"
-			   value="<?php echo esc_attr( get_option( 'oidc_discovery_url', '' ) ); ?>" class="regular-text"
+		<input type="url" id="jrtools_oidc_discovery_url" name="jrtools_oidc_discovery_url"
+			   value="<?php echo esc_attr( get_option( 'jrtools_oidc_discovery_url', '' ) ); ?>" class="regular-text"
 			   placeholder="https://provider.example.com/.well-known/openid-configuration" />
 		<button type="button" id="oidc-fetch-discovery" class="button button-secondary">
-			<?php esc_html_e( 'Abrufen', 'oidc-client' ); ?>
+			<?php esc_html_e( 'Abrufen', 'jrtools-openid-connect' ); ?>
 		</button>
 		<span id="oidc-discovery-status" style="margin-left:8px;"></span>
 		<?php
@@ -107,20 +107,20 @@ class OIDC_Admin_Fields {
 		<input type="url" value="<?php echo esc_attr( $redirect_uri ); ?>"
 			   class="regular-text" readonly="readonly" />
 		<p class="description">
-			<?php esc_html_e( 'Diese URI muss beim OIDC-Provider als erlaubte Redirect URI eingetragen werden.', 'oidc-client' ); ?>
+			<?php esc_html_e( 'Diese URI muss beim OIDC-Provider als erlaubte Redirect URI eingetragen werden.', 'jrtools-openid-connect' ); ?>
 		</p>
 		<?php
 	}
 
 	/** Rendert das Auswahlfeld für die Token-Endpoint-Authentifizierungsmethode. */
 	public function field_token_auth_method() {
-		$current = get_option( 'oidc_token_auth_method', 'client_secret_post' );
+		$current = get_option( 'jrtools_oidc_token_auth_method', 'client_secret_post' );
 		$methods = array(
-			'client_secret_post'  => __( 'client_secret_post – Credentials im POST-Body (Standard, z. B. easyVerein, Keycloak)', 'oidc-client' ),
-			'client_secret_basic' => __( 'client_secret_basic – HTTP Basic Auth (z. B. Azure AD, Okta)', 'oidc-client' ),
+			'client_secret_post'  => __( 'client_secret_post – Credentials im POST-Body (Standard, z. B. easyVerein, Keycloak)', 'jrtools-openid-connect' ),
+			'client_secret_basic' => __( 'client_secret_basic – HTTP Basic Auth (z. B. Azure AD, Okta)', 'jrtools-openid-connect' ),
 		);
-		$this->render_select( 'oidc_token_auth_method', $methods, $current );
-		echo '<p class="description">' . esc_html__( 'Wie sich dieses Plugin beim Token-Endpoint authentifiziert. Bei „invalid_client"-Fehlern die andere Methode probieren.', 'oidc-client' ) . '</p>';
+		$this->render_select( 'jrtools_oidc_token_auth_method', $methods, $current );
+		echo '<p class="description">' . esc_html__( 'Wie sich dieses Plugin beim Token-Endpoint authentifiziert. Bei „invalid_client"-Fehlern die andere Methode probieren.', 'jrtools-openid-connect' ) . '</p>';
 	}
 
 	/**
@@ -142,42 +142,42 @@ class OIDC_Admin_Fields {
 
 	/** Rendert das Dropdown für die Standard-WordPress-Rolle. */
 	public function field_roles_dropdown() {
-		$current = get_option( 'oidc_default_role', 'subscriber' );
+		$current = get_option( 'jrtools_oidc_default_role', 'subscriber' );
 		$roles   = wp_roles()->roles;
 		$options = array();
 		foreach ( $roles as $role_key => $role_data ) {
 			$options[ $role_key ] = translate_user_role( $role_data['name'] );
 		}
-		$this->render_select( 'oidc_default_role', $options, $current );
+		$this->render_select( 'jrtools_oidc_default_role', $options, $current );
 	}
 
 	/** Rendert das Auswahlfeld für „Angemeldet bleiben". */
 	public function field_remember_me() {
-		$current = get_option( 'oidc_remember_me', 'never' );
+		$current = get_option( 'jrtools_oidc_remember_me', 'never' );
 		$options = array(
-			'never'  => __( 'Nie – Sitzung endet beim Schließen des Browsers', 'oidc-client' ),
-			'always' => __( 'Immer – Dauerhaftes Auth-Cookie (14 Tage)', 'oidc-client' ),
+			'never'  => __( 'Nie – Sitzung endet beim Schließen des Browsers', 'jrtools-openid-connect' ),
+			'always' => __( 'Immer – Dauerhaftes Auth-Cookie (14 Tage)', 'jrtools-openid-connect' ),
 		);
-		$this->render_select( 'oidc_remember_me', $options, $current );
+		$this->render_select( 'jrtools_oidc_remember_me', $options, $current );
 	}
 
 	/** Rendert die Tabelle für das Rollen-Mapping. */
 	public function field_role_mapping() {
-		$mapping_json = get_option( 'oidc_role_mapping', '' );
+		$mapping_json = get_option( 'jrtools_oidc_role_mapping', '' );
 		$mapping      = ! empty( $mapping_json ) ? json_decode( $mapping_json, true ) : array();
 		if ( ! is_array( $mapping ) ) {
 			$mapping = array();
 		}
 		$wp_roles = wp_roles()->roles;
 		?>
-		<input type="hidden" id="oidc_role_mapping" name="oidc_role_mapping"
+		<input type="hidden" id="jrtools_oidc_role_mapping" name="jrtools_oidc_role_mapping"
 			   value="<?php echo esc_attr( $mapping_json ); ?>" />
 
 		<table id="oidc-role-mapping-table" class="widefat" style="width:auto;margin-bottom:8px;">
 			<thead>
 				<tr>
-					<th><?php esc_html_e( 'Claim-Wert', 'oidc-client' ); ?></th>
-					<th><?php esc_html_e( 'WordPress-Rolle', 'oidc-client' ); ?></th>
+					<th><?php esc_html_e( 'Claim-Wert', 'jrtools-openid-connect' ); ?></th>
+					<th><?php esc_html_e( 'WordPress-Rolle', 'jrtools-openid-connect' ); ?></th>
 					<th></th>
 				</tr>
 			</thead>
@@ -188,12 +188,12 @@ class OIDC_Admin_Fields {
 					?>
 				<tr>
 					<td>
-						<label for="<?php echo esc_attr( $row_id . '-claim' ); ?>" class="screen-reader-text"><?php esc_html_e( 'Claim-Wert', 'oidc-client' ); ?></label>
+						<label for="<?php echo esc_attr( $row_id . '-claim' ); ?>" class="screen-reader-text"><?php esc_html_e( 'Claim-Wert', 'jrtools-openid-connect' ); ?></label>
 						<input type="text" id="<?php echo esc_attr( $row_id . '-claim' ); ?>" class="rm-claim regular-text"
 							   value="<?php echo esc_attr( $claim_value ); ?>" />
 					</td>
 					<td>
-						<label for="<?php echo esc_attr( $row_id . '-role' ); ?>" class="screen-reader-text"><?php esc_html_e( 'WordPress-Rolle', 'oidc-client' ); ?></label>
+						<label for="<?php echo esc_attr( $row_id . '-role' ); ?>" class="screen-reader-text"><?php esc_html_e( 'WordPress-Rolle', 'jrtools-openid-connect' ); ?></label>
 						<select id="<?php echo esc_attr( $row_id . '-role' ); ?>" class="rm-role">
 							<?php foreach ( $wp_roles as $role_key => $role_data ) : ?>
 							<option value="<?php echo esc_attr( $role_key ); ?>"
@@ -205,7 +205,7 @@ class OIDC_Admin_Fields {
 					</td>
 					<td>
 						<button type="button" class="button button-small rm-remove">
-							<?php esc_html_e( 'Entfernen', 'oidc-client' ); ?>
+							<?php esc_html_e( 'Entfernen', 'jrtools-openid-connect' ); ?>
 						</button>
 					</td>
 				</tr>
@@ -213,10 +213,10 @@ class OIDC_Admin_Fields {
 			</tbody>
 		</table>
 		<button type="button" id="oidc-rm-add" class="button button-secondary">
-			<?php esc_html_e( '+ Zeile hinzufügen', 'oidc-client' ); ?>
+			<?php esc_html_e( '+ Zeile hinzufügen', 'jrtools-openid-connect' ); ?>
 		</button>
 		<p class="description">
-			<?php esc_html_e( 'Einem Claim-Wert können mehrere Zeilen zugewiesen werden. Es wird die erste passende Zeile verwendet.', 'oidc-client' ); ?>
+			<?php esc_html_e( 'Einem Claim-Wert können mehrere Zeilen zugewiesen werden. Es wird die erste passende Zeile verwendet.', 'jrtools-openid-connect' ); ?>
 		</p>
 		<script>
 		(function () {
@@ -237,7 +237,7 @@ class OIDC_Admin_Fields {
 					var role  = row.querySelector('.rm-role').value;
 					if (claim) result[claim] = role;
 				});
-				document.getElementById('oidc_role_mapping').value = JSON.stringify(result);
+				document.getElementById('jrtools_oidc_role_mapping').value = JSON.stringify(result);
 			}
 
 			document.getElementById('oidc-rm-add').addEventListener('click', function () {
@@ -245,7 +245,7 @@ class OIDC_Admin_Fields {
 				var tr = document.createElement('tr');
 				tr.innerHTML = '<td><input type="text" class="rm-claim regular-text" value="" /></td>'
 					+ '<td><select class="rm-role">' + rolesHtml + '</select></td>'
-					+ '<td><button type="button" class="button button-small rm-remove"><?php echo esc_js( __( 'Entfernen', 'oidc-client' ) ); ?></button></td>';
+					+ '<td><button type="button" class="button button-small rm-remove"><?php echo esc_js( __( 'Entfernen', 'jrtools-openid-connect' ) ); ?></button></td>';
 				tbody.appendChild(tr);
 			});
 

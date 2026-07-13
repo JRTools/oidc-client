@@ -115,10 +115,10 @@ class TokenExchangeTest extends WpTestCase {
 
     public function test_exchange_code_http_error_returns_wp_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )      { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_client_id' )           { return 'client-id'; }
-            if ( $key === 'oidc_client_secret' )       { return 'secret'; }
-            if ( $key === 'oidc_token_auth_method' )   { return 'client_secret_post'; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )      { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_client_id' )           { return 'client-id'; }
+            if ( $key === 'jrtools_oidc_client_secret' )       { return 'secret'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' )   { return 'client_secret_post'; }
             return $default;
         } );
         Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
@@ -133,8 +133,8 @@ class TokenExchangeTest extends WpTestCase {
 
     public function test_exchange_code_non_200_returns_wp_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_post'; }
             return $default;
         } );
         Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
@@ -152,10 +152,10 @@ class TokenExchangeTest extends WpTestCase {
 
     public function test_exchange_code_with_basic_auth_method() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_client_id' )         { return 'client-id'; }
-            if ( $key === 'oidc_client_secret' )     { return 'secret'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_basic'; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_client_id' )         { return 'client-id'; }
+            if ( $key === 'jrtools_oidc_client_secret' )     { return 'secret'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_basic'; }
             return $default;
         } );
         Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
@@ -174,8 +174,8 @@ class TokenExchangeTest extends WpTestCase {
 
     public function test_exchange_code_with_code_verifier_sends_it() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_post'; }
             return $default;
         } );
         Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
@@ -194,8 +194,8 @@ class TokenExchangeTest extends WpTestCase {
 
     public function test_exchange_code_success_returns_body_data() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_post'; }
             return $default;
         } );
         Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );
@@ -214,8 +214,8 @@ class TokenExchangeTest extends WpTestCase {
 
     public function test_exchange_code_provider_error_in_body_returns_wp_error() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
-            if ( $key === 'oidc_token_auth_method' ) { return 'client_secret_post'; }
+            if ( $key === 'jrtools_oidc_token_endpoint' )    { return 'https://provider.example.com/token'; }
+            if ( $key === 'jrtools_oidc_token_auth_method' ) { return 'client_secret_post'; }
             return $default;
         } );
         Functions\when( 'add_query_arg' )->justReturn( 'https://example.com/wp-login.php?oidc_callback=1' );

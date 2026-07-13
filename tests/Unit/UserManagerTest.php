@@ -55,7 +55,7 @@ class UserManagerTest extends WpTestCase {
         Functions\when( 'wp_set_auth_cookie' )->justReturn( null );
         Functions\when( 'do_action' )->justReturn( null );
         Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
-            if ( 'login_redirect' === $hook || 'oidc_login_redirect' === $hook ) {
+            if ( 'login_redirect' === $hook || 'jrtools_oidc_login_redirect' === $hook ) {
                 return 'https://example.com/wp-admin/';
             }
             return $value;
@@ -71,12 +71,12 @@ class UserManagerTest extends WpTestCase {
     /** Gemeinsamer get_option-Alias für Neuerstellungs-Tests. */
     private function newUserOptions(): \Closure {
         return function ( $key, $default = false ) {
-            if ( $key === 'oidc_active_claim' )   { return ''; }
-            if ( $key === 'oidc_create_user' )    { return true; }
-            if ( $key === 'oidc_default_role' )   { return 'subscriber'; }
-            if ( $key === 'oidc_sync_avatar' )    { return ''; }
-            if ( $key === 'oidc_remember_me' )    { return 'never'; }
-            if ( $key === 'oidc_enable_refresh' ) { return ''; }
+            if ( $key === 'jrtools_oidc_active_claim' )   { return ''; }
+            if ( $key === 'jrtools_oidc_create_user' )    { return true; }
+            if ( $key === 'jrtools_oidc_default_role' )   { return 'subscriber'; }
+            if ( $key === 'jrtools_oidc_sync_avatar' )    { return ''; }
+            if ( $key === 'jrtools_oidc_remember_me' )    { return 'never'; }
+            if ( $key === 'jrtools_oidc_enable_refresh' ) { return ''; }
             return $default;
         };
     }
@@ -84,10 +84,10 @@ class UserManagerTest extends WpTestCase {
     /** Gemeinsamer get_option-Alias für Bestehender-User-Tests. */
     private function existingUserOptions(): \Closure {
         return function ( $key, $default = false ) {
-            if ( $key === 'oidc_active_claim' )   { return ''; }
-            if ( $key === 'oidc_sync_avatar' )    { return ''; }
-            if ( $key === 'oidc_remember_me' )    { return 'never'; }
-            if ( $key === 'oidc_enable_refresh' ) { return ''; }
+            if ( $key === 'jrtools_oidc_active_claim' )   { return ''; }
+            if ( $key === 'jrtools_oidc_sync_avatar' )    { return ''; }
+            if ( $key === 'jrtools_oidc_remember_me' )    { return 'never'; }
+            if ( $key === 'jrtools_oidc_enable_refresh' ) { return ''; }
             return $default;
         };
     }
@@ -100,7 +100,7 @@ class UserManagerTest extends WpTestCase {
         $GLOBALS['wpdb'] = new class { public $prefix = 'wp_'; public function insert( $t, $d, $f ) {} };
 
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_active_claim' ) { return 'active'; }
+            if ( $key === 'jrtools_oidc_active_claim' ) { return 'active'; }
             return $default;
         } );
         Functions\when( '__' )->returnArg();
@@ -145,8 +145,8 @@ class UserManagerTest extends WpTestCase {
         $GLOBALS['wpdb'] = new class { public $prefix = 'wp_'; public function insert( $t, $d, $f ) {} };
 
         Functions\when( 'get_option' )->alias( function ( $key, $default = false ) {
-            if ( $key === 'oidc_active_claim' )  { return ''; }
-            if ( $key === 'oidc_create_user' )   { return false; }
+            if ( $key === 'jrtools_oidc_active_claim' )  { return ''; }
+            if ( $key === 'jrtools_oidc_create_user' )   { return false; }
             return $default;
         } );
         Functions\when( 'sanitize_email' )->returnArg();
@@ -201,10 +201,10 @@ class UserManagerTest extends WpTestCase {
         $existingUser->user_login = 'existinguser';
 
         Functions\when( 'get_option' )->alias( function ( $key, $default = false ) {
-            if ( $key === 'oidc_active_claim' )   { return ''; }
-            if ( $key === 'oidc_sync_avatar' )    { return ''; }
-            if ( $key === 'oidc_remember_me' )    { return 'always'; }
-            if ( $key === 'oidc_enable_refresh' ) { return ''; }
+            if ( $key === 'jrtools_oidc_active_claim' )   { return ''; }
+            if ( $key === 'jrtools_oidc_sync_avatar' )    { return ''; }
+            if ( $key === 'jrtools_oidc_remember_me' )    { return 'always'; }
+            if ( $key === 'jrtools_oidc_enable_refresh' ) { return ''; }
             return $default;
         } );
         Functions\when( 'get_users' )->justReturn( array( $existingUser ) );
@@ -232,7 +232,7 @@ class UserManagerTest extends WpTestCase {
         $GLOBALS['wpdb'] = new class { public $prefix = 'wp_'; public function insert( $t, $d, $f ) {} };
 
         Functions\when( 'get_option' )->alias( function ( $key, $default = false ) {
-            if ( $key === 'oidc_active_claim' ) { return ''; }
+            if ( $key === 'jrtools_oidc_active_claim' ) { return ''; }
             return $default;
         } );
         Functions\when( 'sanitize_email' )->returnArg();
@@ -258,7 +258,7 @@ class UserManagerTest extends WpTestCase {
         $GLOBALS['wpdb'] = new class { public $prefix = 'wp_'; public function insert( $t, $d, $f ) {} };
 
         Functions\when( 'get_option' )->alias( function ( $key, $default = false ) {
-            if ( $key === 'oidc_active_claim' ) { return ''; }
+            if ( $key === 'jrtools_oidc_active_claim' ) { return ''; }
             return $default;
         } );
         Functions\when( 'sanitize_email' )->returnArg();
@@ -348,10 +348,10 @@ class UserManagerTest extends WpTestCase {
         $existingUser->user_login = 'existinguser';
 
         Functions\when( 'get_option' )->alias( function ( $key, $default = false ) {
-            if ( $key === 'oidc_active_claim' )   { return ''; }
-            if ( $key === 'oidc_sync_avatar' )    { return ''; }
-            if ( $key === 'oidc_remember_me' )    { return 'never'; }
-            if ( $key === 'oidc_enable_refresh' ) { return ''; }
+            if ( $key === 'jrtools_oidc_active_claim' )   { return ''; }
+            if ( $key === 'jrtools_oidc_sync_avatar' )    { return ''; }
+            if ( $key === 'jrtools_oidc_remember_me' )    { return 'never'; }
+            if ( $key === 'jrtools_oidc_enable_refresh' ) { return ''; }
             return $default;
         } );
         Functions\when( 'esc_url_raw' )->returnArg();
@@ -380,10 +380,10 @@ class UserManagerTest extends WpTestCase {
         $existingUser->user_login = 'subuser';
 
         Functions\when( 'get_option' )->alias( function ( $key, $default = false ) {
-            if ( $key === 'oidc_active_claim' )   { return ''; }
-            if ( $key === 'oidc_sync_avatar' )    { return ''; }
-            if ( $key === 'oidc_remember_me' )    { return 'never'; }
-            if ( $key === 'oidc_enable_refresh' ) { return ''; }
+            if ( $key === 'jrtools_oidc_active_claim' )   { return ''; }
+            if ( $key === 'jrtools_oidc_sync_avatar' )    { return ''; }
+            if ( $key === 'jrtools_oidc_remember_me' )    { return 'never'; }
+            if ( $key === 'jrtools_oidc_enable_refresh' ) { return ''; }
             return $default;
         } );
         Functions\when( 'get_users' )->justReturn( array( $existingUser ) );
@@ -440,10 +440,10 @@ class UserManagerTest extends WpTestCase {
 
         $updatedData = null;
         Functions\when( 'get_option' )->alias( function ( $k, $d = false ) {
-            if ( $k === 'oidc_active_claim' )   { return ''; }
-            if ( $k === 'oidc_sync_avatar' )    { return ''; }
-            if ( $k === 'oidc_remember_me' )    { return 'never'; }
-            if ( $k === 'oidc_enable_refresh' ) { return ''; }
+            if ( $k === 'jrtools_oidc_active_claim' )   { return ''; }
+            if ( $k === 'jrtools_oidc_sync_avatar' )    { return ''; }
+            if ( $k === 'jrtools_oidc_remember_me' )    { return 'never'; }
+            if ( $k === 'jrtools_oidc_enable_refresh' ) { return ''; }
             return $d;
         } );
         Functions\when( 'get_users' )->justReturn( array( $existingUser ) );
@@ -477,10 +477,10 @@ class UserManagerTest extends WpTestCase {
 
         $metaUpdates = array();
         Functions\when( 'get_option' )->alias( function ( $k, $d = false ) {
-            if ( $k === 'oidc_active_claim' )   { return ''; }
-            if ( $k === 'oidc_sync_avatar' )    { return ''; }
-            if ( $k === 'oidc_remember_me' )    { return 'never'; }
-            if ( $k === 'oidc_enable_refresh' ) { return ''; }
+            if ( $k === 'jrtools_oidc_active_claim' )   { return ''; }
+            if ( $k === 'jrtools_oidc_sync_avatar' )    { return ''; }
+            if ( $k === 'jrtools_oidc_remember_me' )    { return 'never'; }
+            if ( $k === 'jrtools_oidc_enable_refresh' ) { return ''; }
             return $d;
         } );
         Functions\when( 'get_users' )->justReturn( array( $existingUser ) );
@@ -518,10 +518,10 @@ class UserManagerTest extends WpTestCase {
 
         $metaUpdates = array();
         Functions\when( 'get_option' )->alias( function ( $k, $d = false ) {
-            if ( $k === 'oidc_active_claim' )   { return ''; }
-            if ( $k === 'oidc_sync_avatar' )    { return ''; }
-            if ( $k === 'oidc_remember_me' )    { return 'never'; }
-            if ( $k === 'oidc_enable_refresh' ) { return ''; }
+            if ( $k === 'jrtools_oidc_active_claim' )   { return ''; }
+            if ( $k === 'jrtools_oidc_sync_avatar' )    { return ''; }
+            if ( $k === 'jrtools_oidc_remember_me' )    { return 'never'; }
+            if ( $k === 'jrtools_oidc_enable_refresh' ) { return ''; }
             return $d;
         } );
         Functions\when( 'get_users' )->justReturn( array( $existingUser ) );
@@ -571,10 +571,10 @@ class UserManagerTest extends WpTestCase {
 
         $metaUpdates = array();
         Functions\when( 'get_option' )->alias( function ( $k, $d = false ) {
-            if ( $k === 'oidc_active_claim' )   { return ''; }
-            if ( $k === 'oidc_sync_avatar' )    { return ''; }
-            if ( $k === 'oidc_remember_me' )    { return 'never'; }
-            if ( $k === 'oidc_enable_refresh' ) { return ''; }
+            if ( $k === 'jrtools_oidc_active_claim' )   { return ''; }
+            if ( $k === 'jrtools_oidc_sync_avatar' )    { return ''; }
+            if ( $k === 'jrtools_oidc_remember_me' )    { return 'never'; }
+            if ( $k === 'jrtools_oidc_enable_refresh' ) { return ''; }
             return $d;
         } );
         Functions\when( 'get_users' )->justReturn( array( $existingUser ) );
@@ -609,10 +609,10 @@ class UserManagerTest extends WpTestCase {
 
         $metaUpdates = array();
         Functions\when( 'get_option' )->alias( function ( $k, $d = false ) {
-            if ( $k === 'oidc_active_claim' )   { return ''; }
-            if ( $k === 'oidc_sync_avatar' )    { return ''; }
-            if ( $k === 'oidc_remember_me' )    { return 'never'; }
-            if ( $k === 'oidc_enable_refresh' ) { return ''; }
+            if ( $k === 'jrtools_oidc_active_claim' )   { return ''; }
+            if ( $k === 'jrtools_oidc_sync_avatar' )    { return ''; }
+            if ( $k === 'jrtools_oidc_remember_me' )    { return 'never'; }
+            if ( $k === 'jrtools_oidc_enable_refresh' ) { return ''; }
             return $d;
         } );
         Functions\when( 'get_users' )->justReturn( array( $existingUser ) );
@@ -661,7 +661,7 @@ class UserManagerTest extends WpTestCase {
 
         $firedWith = null;
         Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$firedWith ) {
-            if ( 'oidc_login_success' === $hook ) {
+            if ( 'jrtools_oidc_login_success' === $hook ) {
                 $firedWith = $args;
             }
         } );
@@ -689,7 +689,7 @@ class UserManagerTest extends WpTestCase {
 
         $firedWith = null;
         Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$firedWith ) {
-            if ( 'oidc_login_failed' === $hook ) {
+            if ( 'jrtools_oidc_login_failed' === $hook ) {
                 $firedWith = $args;
             }
         } );
@@ -719,7 +719,7 @@ class UserManagerTest extends WpTestCase {
 
         $createdUserId = null;
         Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$createdUserId ) {
-            if ( 'oidc_user_created' === $hook ) {
+            if ( 'jrtools_oidc_user_created' === $hook ) {
                 $createdUserId = $args[0];
             }
         } );
@@ -745,7 +745,7 @@ class UserManagerTest extends WpTestCase {
 
         $created = false;
         Functions\when( 'do_action' )->alias( function ( $hook ) use ( &$created ) {
-            if ( 'oidc_user_created' === $hook ) {
+            if ( 'jrtools_oidc_user_created' === $hook ) {
                 $created = true;
             }
         } );
@@ -771,7 +771,7 @@ class UserManagerTest extends WpTestCase {
 
         $updatedUserId = null;
         Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$updatedUserId ) {
-            if ( 'oidc_user_updated' === $hook ) {
+            if ( 'jrtools_oidc_user_updated' === $hook ) {
                 $updatedUserId = $args[0];
             }
         } );
@@ -810,10 +810,10 @@ class UserManagerTest extends WpTestCase {
 
         // Filter modifies the display_name via oidc_userinfo
         Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
-            if ( 'oidc_userinfo' === $hook ) {
+            if ( 'jrtools_oidc_userinfo' === $hook ) {
                 $value['name'] = 'Overridden Name';
             }
-            if ( 'login_redirect' === $hook || 'oidc_login_redirect' === $hook ) {
+            if ( 'login_redirect' === $hook || 'jrtools_oidc_login_redirect' === $hook ) {
                 return 'https://example.com/wp-admin/';
             }
             return $value;
@@ -848,10 +848,10 @@ class UserManagerTest extends WpTestCase {
         } );
 
         Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
-            if ( 'oidc_new_user_data' === $hook ) {
+            if ( 'jrtools_oidc_new_user_data' === $hook ) {
                 $value['description'] = 'Added by filter';
             }
-            if ( 'login_redirect' === $hook || 'oidc_login_redirect' === $hook ) {
+            if ( 'login_redirect' === $hook || 'jrtools_oidc_login_redirect' === $hook ) {
                 return 'https://example.com/wp-admin/';
             }
             return $value;
@@ -886,10 +886,10 @@ class UserManagerTest extends WpTestCase {
         } );
 
         Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
-            if ( 'oidc_user_role' === $hook ) {
+            if ( 'jrtools_oidc_user_role' === $hook ) {
                 return 'editor';
             }
-            if ( 'login_redirect' === $hook || 'oidc_login_redirect' === $hook ) {
+            if ( 'login_redirect' === $hook || 'jrtools_oidc_login_redirect' === $hook ) {
                 return 'https://example.com/wp-admin/';
             }
             return $value;
@@ -917,7 +917,7 @@ class UserManagerTest extends WpTestCase {
 
         $redirectTarget = null;
         Functions\when( 'apply_filters' )->alias( function ( $hook, $value ) {
-            if ( 'oidc_login_redirect' === $hook ) {
+            if ( 'jrtools_oidc_login_redirect' === $hook ) {
                 return 'https://example.com/dashboard/';
             }
             if ( 'login_redirect' === $hook ) {

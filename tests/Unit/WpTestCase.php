@@ -16,7 +16,7 @@ abstract class WpTestCase extends TestCase {
 
     use MockeryPHPUnitIntegration;
 
-    /** Wird true, sobald oidc-client.php einmalig geladen wurde. */
+    /** Wird true, sobald jrtools-openid-connect.php einmalig geladen wurde. */
     private static bool $oidc_file_loaded = false;
 
     protected function setUp(): void {
@@ -26,8 +26,8 @@ abstract class WpTestCase extends TestCase {
         // instrumentieren kann und Brain\Monkey sie pro Test mocken kann.
         require_once dirname( __DIR__ ) . '/stubs/functions.php';
 
-        // oidc-client.php einmalig laden: setzt Plugin-Konstanten und
-        // definiert oidc_client_init(). Muss nach Monkey\setUp() stehen,
+        // jrtools-openid-connect.php einmalig laden: setzt Plugin-Konstanten und
+        // definiert jrtools_oidc_init(). Muss nach Monkey\setUp() stehen,
         // da add_action() beim Laden aufgerufen wird.
         if ( ! self::$oidc_file_loaded ) {
             self::$oidc_file_loaded = true;
@@ -36,7 +36,7 @@ abstract class WpTestCase extends TestCase {
             Brain\Monkey\Functions\when( 'add_action' )->justReturn( null );
             Brain\Monkey\Functions\when( 'add_filter' )->justReturn( null );
             Brain\Monkey\Functions\when( 'get_option' )->justReturn( '' );
-            require_once dirname( dirname( __DIR__ ) ) . '/oidc-client.php';
+            require_once dirname( dirname( __DIR__ ) ) . '/jrtools-openid-connect.php';
         }
     }
 

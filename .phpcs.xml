@@ -3,7 +3,7 @@
     <description>OIDC Client WordPress Plugin – Code Style</description>
 
     <file>includes</file>
-    <file>oidc-client.php</file>
+    <file>jrtools-openid-connect.php</file>
 
     <!-- WordPress-Sicherheitsregeln – nicht deaktivierbar -->
     <rule ref="WordPress.Security"/>

@@ -74,8 +74,8 @@ class OIDC_Log {
 
     public function add_log_page() {
         add_management_page(
-            __( 'OIDC Login-Log', 'oidc-client' ),
-            __( 'OIDC Login-Log', 'oidc-client' ),
+            __( 'OIDC Login-Log', 'jrtools-openid-connect' ),
+            __( 'OIDC Login-Log', 'jrtools-openid-connect' ),
             'manage_options',
             'oidc-login-log',
             array( $this, 'render_log_page' )
@@ -84,7 +84,7 @@ class OIDC_Log {
 
     public function render_log_page() {
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'Keine Berechtigung.', 'oidc-client' ) );
+            wp_die( esc_html__( 'Keine Berechtigung.', 'jrtools-openid-connect' ) );
         }
 
         global $wpdb;
@@ -111,29 +111,29 @@ class OIDC_Log {
 
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e( 'OIDC Login-Log', 'oidc-client' ); ?></h1>
+            <h1><?php esc_html_e( 'OIDC Login-Log', 'jrtools-openid-connect' ); ?></h1>
             <p class="description">
                 <?php
                 printf(
                     /* translators: %d: Anzahl der Log-Einträge */
-                    esc_html__( '%d Einträge gesamt', 'oidc-client' ),
+                    esc_html__( '%d Einträge gesamt', 'jrtools-openid-connect' ),
                     (int) $total // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- int-cast, kein User-Input.
                 );
                 ?>
             </p>
 
             <?php if ( empty( $items ) ) : ?>
-                <p><?php esc_html_e( 'Noch keine Einträge vorhanden.', 'oidc-client' ); ?></p>
+                <p><?php esc_html_e( 'Noch keine Einträge vorhanden.', 'jrtools-openid-connect' ); ?></p>
             <?php else : ?>
 
             <table class="widefat striped oidc-log-table">
                 <thead>
                     <tr>
-                        <th><?php esc_html_e( 'Zeitstempel', 'oidc-client' ); ?></th>
-                        <th><?php esc_html_e( 'Benutzer', 'oidc-client' ); ?></th>
-                        <th><?php esc_html_e( 'IP-Adresse', 'oidc-client' ); ?></th>
-                        <th><?php esc_html_e( 'Status', 'oidc-client' ); ?></th>
-                        <th><?php esc_html_e( 'Meldung', 'oidc-client' ); ?></th>
+                        <th><?php esc_html_e( 'Zeitstempel', 'jrtools-openid-connect' ); ?></th>
+                        <th><?php esc_html_e( 'Benutzer', 'jrtools-openid-connect' ); ?></th>
+                        <th><?php esc_html_e( 'IP-Adresse', 'jrtools-openid-connect' ); ?></th>
+                        <th><?php esc_html_e( 'Status', 'jrtools-openid-connect' ); ?></th>
+                        <th><?php esc_html_e( 'Meldung', 'jrtools-openid-connect' ); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -146,15 +146,15 @@ class OIDC_Log {
                                     <?php echo esc_html( $item->user_login ); ?>
                                 </a>
                             <?php else : ?>
-                                <em><?php esc_html_e( 'unbekannt', 'oidc-client' ); ?></em>
+                                <em><?php esc_html_e( 'unbekannt', 'jrtools-openid-connect' ); ?></em>
                             <?php endif; ?>
                         </td>
                         <td><?php echo esc_html( $item->ip ); ?></td>
                         <td>
                             <?php if ( $item->success ) : ?>
-                                <span class="oidc-log-success">&#10003; <?php esc_html_e( 'Erfolg', 'oidc-client' ); ?></span>
+                                <span class="oidc-log-success">&#10003; <?php esc_html_e( 'Erfolg', 'jrtools-openid-connect' ); ?></span>
                             <?php else : ?>
-                                <span class="oidc-log-failure">&#10007; <?php esc_html_e( 'Fehler', 'oidc-client' ); ?></span>
+                                <span class="oidc-log-failure">&#10007; <?php esc_html_e( 'Fehler', 'jrtools-openid-connect' ); ?></span>
                             <?php endif; ?>
                         </td>
                         <td><?php echo esc_html( $item->message ); ?></td>

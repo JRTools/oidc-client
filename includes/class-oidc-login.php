@@ -19,20 +19,20 @@ class OIDC_Login {
     }
 
     public function enqueue_styles() {
-        if ( empty( get_option( 'oidc_client_id' ) ) ) {
+        if ( empty( get_option( 'jrtools_oidc_client_id' ) ) ) {
             return;
         }
         wp_enqueue_style(
             'oidc-login',
-            OIDC_CLIENT_URL . 'assets/css/login.css',
+            JRTOOLS_OIDC_URL . 'assets/css/login.css',
             array(),
-            OIDC_CLIENT_VERSION
+            JRTOOLS_OIDC_VERSION
         );
     }
 
     public function render_login_button() {
-        $client_id     = get_option( 'oidc_client_id', '' );
-        $provider_name = get_option( 'oidc_provider_name', 'OIDC Provider' );
+        $client_id     = get_option( 'jrtools_oidc_client_id', '' );
+        $provider_name = get_option( 'jrtools_oidc_provider_name', 'OIDC Provider' );
 
         if ( empty( $client_id ) ) {
             return;
@@ -40,11 +40,11 @@ class OIDC_Login {
 
         $login_url = add_query_arg( 'oidc_login', '1', wp_login_url() );
         $nonce_url = wp_nonce_url( $login_url, 'oidc_login' );
-        $icon_url  = get_option( 'oidc_button_icon_url', '' );
+        $icon_url  = get_option( 'jrtools_oidc_button_icon_url', '' );
         ?>
         <div class="oidc-login-wrapper">
             <div class="oidc-divider">
-                <span><?php esc_html_e( 'oder', 'oidc-client' ); ?></span>
+                <span><?php esc_html_e( 'oder', 'jrtools-openid-connect' ); ?></span>
             </div>
             <a href="<?php echo esc_url( $nonce_url ); ?>" class="oidc-login-button">
                 <?php if ( ! empty( $icon_url ) ) : ?>
@@ -54,7 +54,7 @@ class OIDC_Login {
                 <?php
                 echo esc_html( sprintf(
                     /* translators: %s: Name des OIDC-Providers */
-                    __( 'Login mit %s', 'oidc-client' ),
+                    __( 'Login mit %s', 'jrtools-openid-connect' ),
                     $provider_name
                 ) );
                 ?>
@@ -65,7 +65,7 @@ class OIDC_Login {
 
     // F8: WordPress-Loginformular ausblenden
     public function maybe_hide_wp_login_form() {
-        if ( get_option( 'oidc_hide_wp_login', '' ) !== '1' ) {
+        if ( get_option( 'jrtools_oidc_hide_wp_login', '' ) !== '1' ) {
             return;
         }
         if ( isset( $_GET['showlogin'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Passthrough-Parameter.
@@ -80,7 +80,7 @@ class OIDC_Login {
 
     // F9: Auto-Login
     public function maybe_auto_login() {
-        if ( get_option( 'oidc_auto_login', '' ) !== '1' ) {
+        if ( get_option( 'jrtools_oidc_auto_login', '' ) !== '1' ) {
             return;
         }
         if ( is_user_logged_in() ) {
@@ -88,7 +88,7 @@ class OIDC_Login {
         }
 
         // Ausnahmen: Passthrough-Parameter
-        $skip_params = array( 'showlogin', 'loggedout', 'oidc_error', 'oidc_callback', 'oidc_link' );
+        $skip_params = array( 'showlogin', 'loggedout', 'oidc_error', 'oidc_callback', 'jrtools_oidc_link' );
         foreach ( $skip_params as $param ) {
             if ( isset( $_GET[ $param ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Auto-Login-Ausnahme.
                 return;
@@ -101,7 +101,7 @@ class OIDC_Login {
             return;
         }
 
-        do_action( 'oidc_initiate_login' );
+        do_action( 'jrtools_oidc_initiate_login' );
     }
 
     public function render_error_message() {
@@ -125,9 +125,9 @@ class OIDC_Login {
         $nonce = isset( $_GET['_wpnonce'] ) ? sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ) : '';
 
         if ( ! wp_verify_nonce( $nonce, 'oidc_login' ) ) {
-            wp_die( esc_html__( 'Sicherheitscheck fehlgeschlagen.', 'oidc-client' ) );
+            wp_die( esc_html__( 'Sicherheitscheck fehlgeschlagen.', 'jrtools-openid-connect' ) );
         }
 
-        do_action( 'oidc_initiate_login' );
+        do_action( 'jrtools_oidc_initiate_login' );
     }
 }

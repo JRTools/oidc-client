@@ -39,7 +39,7 @@ class LoginTest extends WpTestCase {
 
     public function test_hide_form_option_disabled_outputs_nothing() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_hide_wp_login' ? '' : $default;
+            return $key === 'jrtools_oidc_hide_wp_login' ? '' : $default;
         } );
 
         $login = new OIDC_Login();
@@ -52,7 +52,7 @@ class LoginTest extends WpTestCase {
 
     public function test_hide_form_showlogin_param_skips_hiding() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_hide_wp_login' ? '1' : $default;
+            return $key === 'jrtools_oidc_hide_wp_login' ? '1' : $default;
         } );
 
         $_GET['showlogin'] = '1';
@@ -67,7 +67,7 @@ class LoginTest extends WpTestCase {
 
     public function test_hide_form_outputs_css_when_enabled() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_hide_wp_login' ? '1' : $default;
+            return $key === 'jrtools_oidc_hide_wp_login' ? '1' : $default;
         } );
 
         $login = new OIDC_Login();
@@ -128,7 +128,7 @@ class LoginTest extends WpTestCase {
 
     public function test_auto_login_disabled_does_nothing() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_auto_login' ? '' : $default;
+            return $key === 'jrtools_oidc_auto_login' ? '' : $default;
         } );
         Functions\expect( 'is_user_logged_in' )->never();
 
@@ -139,7 +139,7 @@ class LoginTest extends WpTestCase {
 
     public function test_auto_login_logged_in_does_nothing() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_auto_login' ? '1' : $default;
+            return $key === 'jrtools_oidc_auto_login' ? '1' : $default;
         } );
         Functions\when( 'is_user_logged_in' )->justReturn( true );
         Functions\expect( 'do_action' )->never();
@@ -151,7 +151,7 @@ class LoginTest extends WpTestCase {
 
     public function test_auto_login_showlogin_param_skips() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_auto_login' ? '1' : $default;
+            return $key === 'jrtools_oidc_auto_login' ? '1' : $default;
         } );
         Functions\when( 'is_user_logged_in' )->justReturn( false );
 
@@ -165,7 +165,7 @@ class LoginTest extends WpTestCase {
 
     public function test_auto_login_loggedout_param_skips() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_auto_login' ? '1' : $default;
+            return $key === 'jrtools_oidc_auto_login' ? '1' : $default;
         } );
         Functions\when( 'is_user_logged_in' )->justReturn( false );
 
@@ -179,7 +179,7 @@ class LoginTest extends WpTestCase {
 
     public function test_auto_login_oidc_error_param_skips() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_auto_login' ? '1' : $default;
+            return $key === 'jrtools_oidc_auto_login' ? '1' : $default;
         } );
         Functions\when( 'is_user_logged_in' )->justReturn( false );
 
@@ -193,7 +193,7 @@ class LoginTest extends WpTestCase {
 
     public function test_auto_login_logout_action_skips() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_auto_login' ? '1' : $default;
+            return $key === 'jrtools_oidc_auto_login' ? '1' : $default;
         } );
         Functions\when( 'is_user_logged_in' )->justReturn( false );
         Functions\when( 'sanitize_text_field' )->returnArg();
@@ -209,12 +209,12 @@ class LoginTest extends WpTestCase {
 
     public function test_auto_login_fires_do_action() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_auto_login' ? '1' : $default;
+            return $key === 'jrtools_oidc_auto_login' ? '1' : $default;
         } );
         Functions\when( 'is_user_logged_in' )->justReturn( false );
         Functions\when( 'sanitize_text_field' )->returnArg();
         Functions\when( 'wp_unslash' )->returnArg();
-        Functions\expect( 'do_action' )->once()->with( 'oidc_initiate_login' );
+        Functions\expect( 'do_action' )->once()->with( 'jrtools_oidc_initiate_login' );
 
         $login = new OIDC_Login();
         $login->maybe_auto_login();
@@ -257,7 +257,7 @@ class LoginTest extends WpTestCase {
         Functions\when( 'sanitize_text_field' )->returnArg();
         Functions\when( 'wp_unslash' )->returnArg();
         Functions\when( 'wp_verify_nonce' )->justReturn( true );
-        Functions\expect( 'do_action' )->once()->with( 'oidc_initiate_login' );
+        Functions\expect( 'do_action' )->once()->with( 'jrtools_oidc_initiate_login' );
 
         $login = new OIDC_Login();
         $login->handle_login_action();
@@ -270,7 +270,7 @@ class LoginTest extends WpTestCase {
 
     public function test_enqueue_styles_skips_when_no_client_id() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_client_id' ? '' : $default;
+            return $key === 'jrtools_oidc_client_id' ? '' : $default;
         } );
         Functions\expect( 'wp_enqueue_style' )->never();
 
@@ -281,7 +281,7 @@ class LoginTest extends WpTestCase {
 
     public function test_enqueue_styles_enqueues_when_client_id_set() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_client_id' ? 'my-client-id' : $default;
+            return $key === 'jrtools_oidc_client_id' ? 'my-client-id' : $default;
         } );
         Functions\expect( 'wp_enqueue_style' )->once()->with( 'oidc-login', \Mockery::type( 'string' ), \Mockery::type( 'array' ), \Mockery::any() );
 
@@ -296,7 +296,7 @@ class LoginTest extends WpTestCase {
 
     public function test_render_login_button_outputs_nothing_without_client_id() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            return $key === 'oidc_client_id' ? '' : $default;
+            return $key === 'jrtools_oidc_client_id' ? '' : $default;
         } );
 
         $login = new OIDC_Login();
@@ -309,10 +309,10 @@ class LoginTest extends WpTestCase {
 
     public function test_render_login_button_outputs_link_with_client_id() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_client_id' ) {
+            if ( $key === 'jrtools_oidc_client_id' ) {
                 return 'my-client-id';
             }
-            if ( $key === 'oidc_provider_name' ) {
+            if ( $key === 'jrtools_oidc_provider_name' ) {
                 return 'TestProvider';
             }
             return $default;
@@ -335,10 +335,10 @@ class LoginTest extends WpTestCase {
 
     public function test_render_login_button_with_icon_url_outputs_img() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_client_id' ) {
+            if ( $key === 'jrtools_oidc_client_id' ) {
                 return 'my-client-id';
             }
-            if ( $key === 'oidc_button_icon_url' ) {
+            if ( $key === 'jrtools_oidc_button_icon_url' ) {
                 return 'https://cdn.example.com/icon.png';
             }
             return $default;

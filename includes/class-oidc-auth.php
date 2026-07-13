@@ -22,9 +22,9 @@ class OIDC_Auth {
         $this->token_exchange = new OIDC_Token_Exchange();
         $this->user_manager   = new OIDC_User_Manager();
 
-        add_action( 'login_init',          array( $this, 'handle_callback' ) );
-        add_action( 'oidc_initiate_login', array( $this, 'initiate_login' ) );
-        add_action( 'init',                array( $this, 'check_session_validity' ) );
+        add_action( 'login_init',                array( $this, 'handle_callback' ) );
+        add_action( 'jrtools_oidc_initiate_login', array( $this, 'initiate_login' ) );
+        add_action( 'init',                      array( $this, 'check_session_validity' ) );
     }
 
     // -------------------------------------------------------------------------
@@ -32,10 +32,10 @@ class OIDC_Auth {
     // -------------------------------------------------------------------------
 
     public function check_session_validity() {
-        if ( get_option( 'oidc_session_management', '' ) !== '1' ) {
+        if ( get_option( 'jrtools_oidc_session_management', '' ) !== '1' ) {
             return;
         }
-        if ( get_option( 'oidc_enable_refresh', '' ) !== '1' ) {
+        if ( get_option( 'jrtools_oidc_enable_refresh', '' ) !== '1' ) {
             return;
         }
         if ( ! is_user_logged_in() ) {
@@ -43,7 +43,7 @@ class OIDC_Auth {
         }
 
         $user_id = get_current_user_id();
-        if ( empty( get_user_meta( $user_id, '_oidc_subject', true ) ) ) {
+        if ( empty( get_user_meta( $user_id, '_jrtools_oidc_subject', true ) ) ) {
             return; // Kein OIDC-Nutzer
         }
 
@@ -54,7 +54,7 @@ class OIDC_Auth {
             wp_logout();
             wp_safe_redirect( add_query_arg(
                 'oidc_error',
-                rawurlencode( __( 'Sitzung abgelaufen. Bitte erneut anmelden.', 'oidc-client' ) ),
+                rawurlencode( __( 'Sitzung abgelaufen. Bitte erneut anmelden.', 'jrtools-openid-connect' ) ),
                 wp_login_url()
             ) );
             exit;
@@ -66,38 +66,38 @@ class OIDC_Auth {
     // -------------------------------------------------------------------------
 
     public function initiate_login( $extra_params = array() ) {
-        $client_id = get_option( 'oidc_client_id', '' );
-        $auth_ep   = get_option( 'oidc_authorization_endpoint', '' );
-        $scopes    = get_option( 'oidc_scopes', 'openid email profile' );
+        $client_id = get_option( 'jrtools_oidc_client_id', '' );
+        $auth_ep   = get_option( 'jrtools_oidc_authorization_endpoint', '' );
+        $scopes    = get_option( 'jrtools_oidc_scopes', 'openid email profile' );
 
         if ( empty( $client_id ) || empty( $auth_ep ) ) {
-            wp_die( esc_html__( 'OIDC ist nicht vollständig konfiguriert. Bitte prüfe die Einstellungen.', 'oidc-client' ) );
+            wp_die( esc_html__( 'OIDC ist nicht vollständig konfiguriert. Bitte prüfe die Einstellungen.', 'jrtools-openid-connect' ) );
         }
 
         /*
-         * Filter: oidc_scopes
+         * Filter: jrtools_oidc_scopes
          *
          * Allows modifying the OAuth scopes requested from the OIDC provider.
          *
          * @param string $scopes Space-separated list of scopes (e.g. "openid email profile").
          */
-        $scopes = apply_filters( 'oidc_scopes', $scopes );
+        $scopes = apply_filters( 'jrtools_oidc_scopes', $scopes );
 
         // State – CSRF-Schutz
         $state = $this->token_exchange->generate_random_string();
-        set_transient( 'oidc_state_' . $state, 1, 5 * MINUTE_IN_SECONDS );
+        set_transient( 'jrtools_oidc_state_' . $state, 1, 5 * MINUTE_IN_SECONDS );
 
         // Nonce – Replay-Schutz im ID-Token
         $nonce = $this->token_exchange->generate_random_string();
-        set_transient( 'oidc_nonce_' . $nonce, 1, 5 * MINUTE_IN_SECONDS );
+        set_transient( 'jrtools_oidc_nonce_' . $nonce, 1, 5 * MINUTE_IN_SECONDS );
 
         // PKCE – nur wenn Provider S256 unterstützt
         $code_verifier  = '';
         $code_challenge = '';
-        if ( get_option( 'oidc_pkce_supported', '1' ) === '1' ) {
+        if ( get_option( 'jrtools_oidc_pkce_supported', '1' ) === '1' ) {
             $code_verifier  = $this->token_exchange->generate_code_verifier();
             $code_challenge = $this->token_exchange->generate_code_challenge( $code_verifier );
-            set_transient( 'oidc_pkce_' . $state, $code_verifier, 5 * MINUTE_IN_SECONDS );
+            set_transient( 'jrtools_oidc_pkce_' . $state, $code_verifier, 5 * MINUTE_IN_SECONDS );
         }
 
         $params = array(
@@ -120,14 +120,14 @@ class OIDC_Auth {
         }
 
         /*
-         * Filter: oidc_auth_params
+         * Filter: jrtools_oidc_auth_params
          *
          * Allows adding or modifying parameters sent to the OIDC authorization endpoint.
          * Use this to add custom parameters such as ui_locales, acr_values, or login_hint.
          *
          * @param array $params Query parameters for the authorization request.
          */
-        $params = apply_filters( 'oidc_auth_params', $params );
+        $params = apply_filters( 'jrtools_oidc_auth_params', $params );
 
         wp_redirect( $auth_ep . '?' . http_build_query( $params ) ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect -- Externes Redirect zum OIDC Authorization Endpoint (gespeicherte Admin-Option, kein User-Input).
         exit;
@@ -149,7 +149,7 @@ class OIDC_Auth {
                 : '';
             $msg = sprintf(
                 /* translators: 1: Fehler-Code, 2: Beschreibung oder leer */
-                __( 'Fehler vom Provider (Authorization): %1$s%2$s', 'oidc-client' ),
+                __( 'Fehler vom Provider (Authorization): %1$s%2$s', 'jrtools-openid-connect' ),
                 $error_code,
                 $error_desc ? ' – ' . $error_desc : ''
             );
@@ -161,22 +161,22 @@ class OIDC_Auth {
         $state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 
         if ( empty( $code ) || empty( $state ) ) {
-            $this->user_manager->login_error( __( 'Fehlende Parameter im Callback.', 'oidc-client' ) );
+            $this->user_manager->login_error( __( 'Fehlende Parameter im Callback.', 'jrtools-openid-connect' ) );
             return;
         }
 
         // State validieren (CSRF-Schutz)
-        $state_transient = get_transient( 'oidc_state_' . $state );
-        delete_transient( 'oidc_state_' . $state );
+        $state_transient = get_transient( 'jrtools_oidc_state_' . $state );
+        delete_transient( 'jrtools_oidc_state_' . $state );
 
         if ( false === $state_transient ) {
-            $this->user_manager->login_error( __( 'Ungültiger oder abgelaufener State-Parameter.', 'oidc-client' ) );
+            $this->user_manager->login_error( __( 'Ungültiger oder abgelaufener State-Parameter.', 'jrtools-openid-connect' ) );
             return;
         }
 
         // PKCE code_verifier laden und direkt löschen
-        $code_verifier = get_transient( 'oidc_pkce_' . $state );
-        delete_transient( 'oidc_pkce_' . $state );
+        $code_verifier = get_transient( 'jrtools_oidc_pkce_' . $state );
+        delete_transient( 'jrtools_oidc_pkce_' . $state );
 
         // Token Exchange
         $tokens = $this->token_exchange->exchange_code_for_tokens( $code, $code_verifier ? $code_verifier : '' );
@@ -195,11 +195,11 @@ class OIDC_Auth {
 
         // Nonce validieren
         $token_nonce     = isset( $claims['nonce'] ) ? $claims['nonce'] : '';
-        $nonce_transient = get_transient( 'oidc_nonce_' . $token_nonce );
-        delete_transient( 'oidc_nonce_' . $token_nonce );
+        $nonce_transient = get_transient( 'jrtools_oidc_nonce_' . $token_nonce );
+        delete_transient( 'jrtools_oidc_nonce_' . $token_nonce );
 
         if ( empty( $token_nonce ) || false === $nonce_transient ) {
-            $this->user_manager->login_error( __( 'Ungültige oder fehlende Nonce im ID-Token.', 'oidc-client' ) );
+            $this->user_manager->login_error( __( 'Ungültige oder fehlende Nonce im ID-Token.', 'jrtools-openid-connect' ) );
             return;
         }
 
@@ -214,9 +214,9 @@ class OIDC_Auth {
         // F11: Account-Linking prüfen (eingeloggter User verknüpft OIDC-Konto)
         if ( is_user_logged_in() ) {
             $current_user_id = get_current_user_id();
-            $link_pending    = get_transient( 'oidc_link_pending_' . $current_user_id );
+            $link_pending    = get_transient( 'jrtools_oidc_link_pending_' . $current_user_id );
             if ( $link_pending ) {
-                delete_transient( 'oidc_link_pending_' . $current_user_id );
+                delete_transient( 'jrtools_oidc_link_pending_' . $current_user_id );
                 $sub = sanitize_text_field( isset( $userinfo['sub'] ) ? $userinfo['sub'] : '' );
 
                 // SE-1: Subject-Overwrite verhindern – gespeicherten sub mit neuem vergleichen.
@@ -225,23 +225,23 @@ class OIDC_Auth {
                     $stored_sub = $link_pending['sub'];
                 }
                 if ( ! empty( $stored_sub ) && $stored_sub !== $sub ) {
-                    $this->user_manager->login_error( __( 'Subject-Mismatch: Der OIDC-Anbieter hat ein anderes Konto zurückgegeben.', 'oidc-client' ) );
+                    $this->user_manager->login_error( __( 'Subject-Mismatch: Der OIDC-Anbieter hat ein anderes Konto zurückgegeben.', 'jrtools-openid-connect' ) );
                     return;
                 }
 
                 if ( $sub ) {
-                    update_user_meta( $current_user_id, '_oidc_subject', $sub );
+                    update_user_meta( $current_user_id, '_jrtools_oidc_subject', $sub );
                 }
 
                 /*
-                 * Action: oidc_account_linked
+                 * Action: jrtools_oidc_account_linked
                  *
                  * Fires after an existing WordPress account has been linked to an OIDC provider.
                  *
                  * @param int    $user_id WordPress user ID.
                  * @param string $sub     The OIDC subject identifier.
                  */
-                do_action( 'oidc_account_linked', $current_user_id, $sub );
+                do_action( 'jrtools_oidc_account_linked', $current_user_id, $sub );
 
                 wp_safe_redirect( get_edit_profile_url( $current_user_id ) . '#oidc-linked' );
                 exit;
@@ -258,7 +258,7 @@ class OIDC_Auth {
 
     private function validate_id_token( $id_token ) {
         if ( empty( $id_token ) ) {
-            return new WP_Error( 'no_id_token', __( 'Kein ID-Token empfangen.', 'oidc-client' ) );
+            return new WP_Error( 'no_id_token', __( 'Kein ID-Token empfangen.', 'jrtools-openid-connect' ) );
         }
 
         $parsed = OIDC_JWT_Helper::parse_jwt( $id_token );
@@ -272,35 +272,35 @@ class OIDC_Auth {
 
         // exp – Ablaufzeit
         if ( ! isset( $claims['exp'] ) || (int) $claims['exp'] < ( $now - 60 ) ) {
-            return new WP_Error( 'token_expired', __( 'ID-Token ist abgelaufen.', 'oidc-client' ) );
+            return new WP_Error( 'token_expired', __( 'ID-Token ist abgelaufen.', 'jrtools-openid-connect' ) );
         }
 
         // iat – nicht in der Zukunft (5 Minuten Toleranz für Clock-Skew)
         if ( ! isset( $claims['iat'] ) || (int) $claims['iat'] > ( $now + 5 * MINUTE_IN_SECONDS ) ) {
-            return new WP_Error( 'token_iat_invalid', __( 'ID-Token iat ist ungültig.', 'oidc-client' ) );
+            return new WP_Error( 'token_iat_invalid', __( 'ID-Token iat ist ungültig.', 'jrtools-openid-connect' ) );
         }
 
         // iss – Issuer prüfen
-        $expected_issuer = get_option( 'oidc_issuer', '' );
+        $expected_issuer = get_option( 'jrtools_oidc_issuer', '' );
         if ( ! empty( $expected_issuer ) ) {
             $token_iss = isset( $claims['iss'] ) ? $claims['iss'] : '';
             if ( $token_iss !== $expected_issuer ) {
-                return new WP_Error( 'token_iss_mismatch', __( 'ID-Token Issuer stimmt nicht überein.', 'oidc-client' ) );
+                return new WP_Error( 'token_iss_mismatch', __( 'ID-Token Issuer stimmt nicht überein.', 'jrtools-openid-connect' ) );
             }
         }
 
         // aud – Audience prüfen
-        $client_id = get_option( 'oidc_client_id', '' );
+        $client_id = get_option( 'jrtools_oidc_client_id', '' );
         if ( ! empty( $client_id ) ) {
             $aud      = isset( $claims['aud'] ) ? $claims['aud'] : array();
             $aud_list = is_array( $aud ) ? $aud : array( $aud );
             if ( ! in_array( $client_id, $aud_list, true ) ) {
-                return new WP_Error( 'token_aud_mismatch', __( 'ID-Token Audience stimmt nicht überein.', 'oidc-client' ) );
+                return new WP_Error( 'token_aud_mismatch', __( 'ID-Token Audience stimmt nicht überein.', 'jrtools-openid-connect' ) );
             }
         }
 
         // RS256-Signaturprüfung
-        $jwks_uri = get_option( 'oidc_jwks_uri', '' );
+        $jwks_uri = get_option( 'jrtools_oidc_jwks_uri', '' );
         if ( ! empty( $jwks_uri ) ) {
             $sig_result = OIDC_JWT_Helper::verify_signature( $parts, $header, $jwks_uri );
             if ( is_wp_error( $sig_result ) ) {
@@ -316,10 +316,10 @@ class OIDC_Auth {
     // -------------------------------------------------------------------------
 
     private function fetch_userinfo( $access_token ) {
-        $userinfo_ep = get_option( 'oidc_userinfo_endpoint', '' );
+        $userinfo_ep = get_option( 'jrtools_oidc_userinfo_endpoint', '' );
 
         if ( empty( $userinfo_ep ) ) {
-            return new WP_Error( 'no_userinfo_endpoint', __( 'Userinfo-Endpoint nicht konfiguriert.', 'oidc-client' ) );
+            return new WP_Error( 'no_userinfo_endpoint', __( 'Userinfo-Endpoint nicht konfiguriert.', 'jrtools-openid-connect' ) );
         }
 
         $response = wp_remote_get( $userinfo_ep, array(
@@ -339,7 +339,7 @@ class OIDC_Auth {
             return new WP_Error(
                 'userinfo_request_failed',
                 /* translators: %d: HTTP-Statuscode des Userinfo-Endpoints */
-                sprintf( __( 'Userinfo endpoint returned HTTP %d.', 'oidc-client' ), $response_code )
+                sprintf( __( 'Userinfo endpoint returned HTTP %d.', 'jrtools-openid-connect' ), $response_code )
             );
         }
 
@@ -348,7 +348,7 @@ class OIDC_Auth {
         if ( ! is_array( $data ) || empty( $data['email'] ) ) {
             return new WP_Error(
                 'userinfo_no_email',
-                __( 'Der Provider hat keine E-Mail-Adresse zurückgegeben. Bitte prüfe die konfigurierten Scopes.', 'oidc-client' )
+                __( 'Der Provider hat keine E-Mail-Adresse zurückgegeben. Bitte prüfe die konfigurierten Scopes.', 'jrtools-openid-connect' )
             );
         }
 

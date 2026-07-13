@@ -101,7 +101,7 @@ if ( ! function_exists( 'plugin_dir_path' ) ) {
 }
 if ( ! function_exists( 'plugin_dir_url' ) ) {
     function plugin_dir_url( $file ) {
-        return 'https://example.com/wp-content/plugins/oidc-client/';
+        return 'https://example.com/wp-content/plugins/jrtools-openid-connect/';
     }
 }
 if ( ! function_exists( 'register_activation_hook' ) ) {

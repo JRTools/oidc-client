@@ -1,4 +1,4 @@
-=== OIDC Client ===
+=== JRTools OpenID Connect ===
 Contributors: johannesroesch
 Tags: openid-connect, oauth2, sso, authentication, login
 Requires at least: 6.7
@@ -12,7 +12,7 @@ WordPress login via OpenID Connect – Authorization Code Flow with PKCE, token 
 
 == Description ==
 
-**OIDC Client** enables your WordPress site to authenticate users via any standard OpenID Connect provider. The login is handled through the secure Authorization Code Flow with PKCE (Proof Key for Code Exchange, RFC 7636).
+**JRTools OpenID Connect** enables your WordPress site to authenticate users via any standard OpenID Connect provider. The login is handled through the secure Authorization Code Flow with PKCE (Proof Key for Code Exchange, RFC 7636).
 
 Works out of the box with **Keycloak**, **Microsoft Entra ID (Azure AD)**, **Google**, **Okta**, **Auth0**, **easyVerein**, and any other standards-compliant provider.
 
@@ -23,7 +23,7 @@ Works out of the box with **Keycloak**, **Microsoft Entra ID (Azure AD)**, **Goo
 * **JWT signature verification** – RS256 validation via JWKS endpoint with 1-hour cache and automatic key rotation
 * **Token encryption** (AES-256-CBC) – optionally encrypts access, refresh, and ID tokens at rest
 * **Session management** – ties WordPress sessions to token expiry; silently refreshes via refresh token; terminates session on failure
-* **Frontchannel logout** and **Backchannel logout** (REST endpoint `POST /wp-json/oidc-client/v1/backchannel-logout`)
+* **Frontchannel logout** and **Backchannel logout** (REST endpoint `POST /wp-json/jrtools-oidc/v1/backchannel-logout`)
 * **Account linking** – link and unlink existing WordPress accounts to an OIDC provider from the user profile
 * **Role mapping** – map claim values to WordPress roles via simple line-based configuration (`claim-value=role`)
 * **Lock email address** – prevents OIDC-linked users from changing their email in WordPress
@@ -47,12 +47,12 @@ Works out of the box with **Keycloak**, **Microsoft Entra ID (Azure AD)**, **Goo
 = From the WordPress Plugin Directory =
 
 1. Go to **Plugins → Add New** in your WordPress admin.
-2. Search for **OIDC Client**.
+2. Search for **JRTools OpenID Connect**.
 3. Click **Install Now**, then **Activate**.
 
 = Manual Installation =
 
-1. Download the latest `oidc-client-x.y.z.zip` from the [releases page](https://github.com/JRTools/oidc-client/releases).
+1. Download the latest `jrtools-openid-connect-x.y.z.zip` from the [releases page](https://github.com/JRTools/oidc-client/releases).
 2. Go to **Plugins → Add New → Upload Plugin**.
 3. Select the ZIP file and click **Install Now**.
 4. Activate the plugin.
@@ -88,7 +88,7 @@ Yes. The plugin uses PKCE (S256) to prevent code interception attacks, validates
 
 = Where are tokens stored? =
 
-In WordPress user meta (`_oidc_access_token`, `_oidc_refresh_token`, `_oidc_id_token`). With token encryption enabled, they are stored with an `enc:` prefix in AES-256-CBC encrypted form.
+In WordPress user meta (`_jrtools_oidc_access_token`, `_jrtools_oidc_refresh_token`, `_jrtools_oidc_id_token`). With token encryption enabled, they are stored with an `enc:` prefix in AES-256-CBC encrypted form.
 
 = What happens when the access token expires? =
 
@@ -100,7 +100,7 @@ In **Settings → OIDC Client → Rollen-Mapping**, set the claim name (e.g. `ro
 
 = How do I set up backchannel logout? =
 
-Register `https://your-site.com/wp-json/oidc-client/v1/backchannel-logout` as the backchannel logout URI at your provider.
+Register `https://your-site.com/wp-json/jrtools-oidc/v1/backchannel-logout` as the backchannel logout URI at your provider.
 
 == Screenshots ==
 

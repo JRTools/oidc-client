@@ -1,8 +1,8 @@
 <?php
 /**
- * Tests für oidc-client.php – Konstanten, init-Funktion und Klassen-Existenz.
+ * Tests für jrtools-openid-connect.php – Konstanten, init-Funktion und Klassen-Existenz.
  *
- * oidc-client.php wird von WpTestCase::setUp() einmalig geladen.
+ * jrtools-openid-connect.php wird von WpTestCase::setUp() einmalig geladen.
  */
 
 require_once __DIR__ . '/WpTestCase.php';
@@ -24,40 +24,40 @@ class PluginMainTest extends WpTestCase {
     }
 
     // -------------------------------------------------------------------------
-    // Konstanten – gesetzt von oidc-client.php
+    // Konstanten – gesetzt von jrtools-openid-connect.php
     // -------------------------------------------------------------------------
 
     public function test_version_constant_is_defined() {
-        $this->assertTrue( defined( 'OIDC_CLIENT_VERSION' ) );
+        $this->assertTrue( defined( 'JRTOOLS_OIDC_VERSION' ) );
     }
 
     public function test_version_constant_value() {
-        $this->assertSame( OIDC_EXPECTED_VERSION, OIDC_CLIENT_VERSION );
+        $this->assertSame( OIDC_EXPECTED_VERSION, JRTOOLS_OIDC_VERSION );
     }
 
     public function test_dir_constant_is_defined() {
-        $this->assertTrue( defined( 'OIDC_CLIENT_DIR' ) );
+        $this->assertTrue( defined( 'JRTOOLS_OIDC_DIR' ) );
     }
 
     public function test_dir_constant_ends_with_slash() {
-        $this->assertStringEndsWith( '/', OIDC_CLIENT_DIR );
+        $this->assertStringEndsWith( '/', JRTOOLS_OIDC_DIR );
     }
 
     public function test_dir_constant_includes_dir_exists() {
-        $this->assertDirectoryExists( OIDC_CLIENT_DIR . 'includes' );
+        $this->assertDirectoryExists( JRTOOLS_OIDC_DIR . 'includes' );
     }
 
     public function test_url_constant_is_defined() {
-        $this->assertTrue( defined( 'OIDC_CLIENT_URL' ) );
+        $this->assertTrue( defined( 'JRTOOLS_OIDC_URL' ) );
     }
 
     public function test_url_constant_is_non_empty_string() {
-        $this->assertNotEmpty( OIDC_CLIENT_URL );
-        $this->assertIsString( OIDC_CLIENT_URL );
+        $this->assertNotEmpty( JRTOOLS_OIDC_URL );
+        $this->assertIsString( JRTOOLS_OIDC_URL );
     }
 
     // -------------------------------------------------------------------------
-    // Klassen-Existenz – alle via oidc-client.php geladen
+    // Klassen-Existenz – alle via jrtools-openid-connect.php geladen
     // -------------------------------------------------------------------------
 
     public function test_all_plugin_classes_are_loaded() {
@@ -73,15 +73,15 @@ class PluginMainTest extends WpTestCase {
     }
 
     // -------------------------------------------------------------------------
-    // oidc_client_init – Funktion testen
+    // jrtools_oidc_init – Funktion testen
     // -------------------------------------------------------------------------
 
-    public function test_oidc_client_init_function_exists() {
-        $this->assertTrue( function_exists( 'oidc_client_init' ) );
+    public function test_jrtools_oidc_init_function_exists() {
+        $this->assertTrue( function_exists( 'jrtools_oidc_init' ) );
     }
 
-    public function test_oidc_client_init_runs_without_error() {
-        oidc_client_init();
+    public function test_jrtools_oidc_init_runs_without_error() {
+        jrtools_oidc_init();
         $this->addToAssertionCount( 1 );
     }
 }

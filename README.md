@@ -1,4 +1,4 @@
-# OIDC Client
+# JRTools OpenID Connect
 
 [![CI](https://github.com/JRTools/oidc-client/actions/workflows/ci.yml/badge.svg)](https://github.com/JRTools/oidc-client/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/JRTools/oidc-client/branch/main/graph/badge.svg)](https://codecov.io/gh/JRTools/oidc-client)
@@ -14,7 +14,7 @@ WordPress-Plugin für die Anmeldung per OpenID Connect (Authorization Code Flow 
 
 ## Überblick
 
-OIDC Client ermöglicht die Anmeldung an WordPress über jeden standardkonformen OIDC-Provider. Nach der Konfiguration erscheint auf der Login-Seite ein „Anmelden mit [Provider-Name]"-Button; das Plugin übernimmt den gesamten Authorization Code Flow inklusive PKCE, Token-Validierung und Benutzerverwaltung.
+JRTools OpenID Connect ermöglicht die Anmeldung an WordPress über jeden standardkonformen OIDC-Provider. Nach der Konfiguration erscheint auf der Login-Seite ein „Anmelden mit [Provider-Name]"-Button; das Plugin übernimmt den gesamten Authorization Code Flow inklusive PKCE, Token-Validierung und Benutzerverwaltung.
 
 Unterstützte Provider: **Keycloak**, **Microsoft Entra ID (Azure AD)**, **Google**, **Okta**, **Auth0**, **easyVerein** und alle weiteren standardkonformen Anbieter.
 

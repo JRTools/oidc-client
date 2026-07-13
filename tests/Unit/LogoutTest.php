@@ -94,7 +94,7 @@ class LogoutTest extends WpTestCase {
 
     public function test_frontchannel_logout_redirects_to_endpoint() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_end_session_endpoint' ) {
+            if ( $key === 'jrtools_oidc_end_session_endpoint' ) {
                 return 'https://provider.example.com/logout';
             }
             return $default;
@@ -112,13 +112,13 @@ class LogoutTest extends WpTestCase {
 
     public function test_frontchannel_logout_includes_id_token_hint() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_end_session_endpoint' ) {
+            if ( $key === 'jrtools_oidc_end_session_endpoint' ) {
                 return 'https://provider.example.com/logout';
             }
             return $default;
         } );
         Functions\when( 'get_user_meta' )->alias( function ( $user_id, $key, $single ) {
-            if ( $key === '_oidc_id_token' ) {
+            if ( $key === '_jrtools_oidc_id_token' ) {
                 // Simuliere verschlüsselten Token – encrypt gibt base64 zurück
                 // get_id_token ruft decrypt auf, wir geben direkt den Rohwert zurück
                 return '';
@@ -284,7 +284,7 @@ class LogoutTest extends WpTestCase {
     public function test_register_backchannel_endpoint_calls_register_rest_route() {
         Functions\expect( 'register_rest_route' )
             ->once()
-            ->with( 'oidc-client/v1', '/backchannel-logout', \Mockery::type( 'array' ) );
+            ->with( 'jrtools-oidc/v1', '/backchannel-logout', \Mockery::type( 'array' ) );
 
         $this->logout->register_backchannel_endpoint();
         $this->addToAssertionCount( 1 );
@@ -297,7 +297,7 @@ class LogoutTest extends WpTestCase {
     public function test_backchannel_logout_issuer_mismatch_returns_400() {
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_issuer' ) { return 'https://expected.example.com'; }
+            if ( $key === 'jrtools_oidc_issuer' ) { return 'https://expected.example.com'; }
             return $default;
         } );
 
@@ -311,8 +311,8 @@ class LogoutTest extends WpTestCase {
     public function test_backchannel_logout_audience_mismatch_returns_400() {
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_issuer' )    { return ''; }
-            if ( $key === 'oidc_client_id' ) { return 'expected-client'; }
+            if ( $key === 'jrtools_oidc_issuer' )    { return ''; }
+            if ( $key === 'jrtools_oidc_client_id' ) { return 'expected-client'; }
             return $default;
         } );
 
@@ -327,8 +327,8 @@ class LogoutTest extends WpTestCase {
         Functions\when( '__' )->returnArg();
         Functions\when( 'sanitize_text_field' )->returnArg();
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_issuer' )    { return ''; }
-            if ( $key === 'oidc_client_id' ) { return 'my-client'; }
+            if ( $key === 'jrtools_oidc_issuer' )    { return ''; }
+            if ( $key === 'jrtools_oidc_client_id' ) { return 'my-client'; }
             return $default;
         } );
         Functions\when( 'wp_cache_add' )->justReturn( true );
@@ -410,7 +410,7 @@ class LogoutTest extends WpTestCase {
 
         Functions\expect( 'wp_cache_add' )
             ->once()
-            ->with( \Mockery::type( 'string' ), 1, 'oidc_jti', \Mockery::on( function ( $ttl ) {
+            ->with( \Mockery::type( 'string' ), 1, 'jrtools_oidc_jti', \Mockery::on( function ( $ttl ) {
                 // TTL sollte ~3600 sein (exp - time()), mit Toleranz für Testlaufzeit.
                 return $ttl > 3500 && $ttl <= 3600;
             } ) )
@@ -476,7 +476,7 @@ class LogoutTest extends WpTestCase {
         Functions\when( 'get_transient' )->justReturn( false );
         Functions\expect( 'set_transient' )
             ->once()
-            ->with( 'oidc_rl_' . md5( '0.0.0.0' ), 1, 60 )
+            ->with( 'jrtools_oidc_rl_' . md5( '0.0.0.0' ), 1, 60 )
             ->andReturn( true );
 
         unset( $_SERVER['REMOTE_ADDR'] );
@@ -492,7 +492,7 @@ class LogoutTest extends WpTestCase {
 
     public function test_oidc_logout_action_fires_during_frontchannel_logout() {
         Functions\when( 'get_option' )->alias( function ( $key, $default = '' ) {
-            if ( $key === 'oidc_end_session_endpoint' ) {
+            if ( $key === 'jrtools_oidc_end_session_endpoint' ) {
                 return 'https://provider.example.com/logout';
             }
             return $default;
@@ -503,7 +503,7 @@ class LogoutTest extends WpTestCase {
 
         $firedUserId = null;
         Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$firedUserId ) {
-            if ( 'oidc_logout' === $hook ) {
+            if ( 'jrtools_oidc_logout' === $hook ) {
                 $firedUserId = $args[0];
             }
         } );
@@ -536,7 +536,7 @@ class LogoutTest extends WpTestCase {
 
         $firedUserId = null;
         Functions\when( 'do_action' )->alias( function ( $hook, ...$args ) use ( &$firedUserId ) {
-            if ( 'oidc_backchannel_logout' === $hook ) {
+            if ( 'jrtools_oidc_backchannel_logout' === $hook ) {
                 $firedUserId = $args[0];
             }
         } );
