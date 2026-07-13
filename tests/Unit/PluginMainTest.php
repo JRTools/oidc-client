@@ -9,6 +9,9 @@ require_once __DIR__ . '/WpTestCase.php';
 
 use Brain\Monkey\Functions;
 
+/** Expected plugin version – updated automatically by the release workflow. */
+define( 'OIDC_EXPECTED_VERSION', '1.2.0' );
+
 class PluginMainTest extends WpTestCase {
 
     protected function setUp(): void {
@@ -29,7 +32,7 @@ class PluginMainTest extends WpTestCase {
     }
 
     public function test_version_constant_value() {
-        $this->assertSame( '1.2.0', OIDC_CLIENT_VERSION );
+        $this->assertSame( OIDC_EXPECTED_VERSION, OIDC_CLIENT_VERSION );
     }
 
     public function test_dir_constant_is_defined() {
